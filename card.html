@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<canvas id="keyboard" style="border:1px solid black;" data-tonic="Gb" data-notes="Ab,A"></canvas>
+
+</html>
+<script>
+var canvas = document.querySelector("#keyboard");
+var context = canvas.getContext("2d");
+var scale = 1;
+var width = 0;
+var blackLength = 99*scale;
+var whiteLength = 150*scale;
+var blackWidth = 16*scale;
+var whiteWidth = 167*scale/7;
+var selectedNotesList = canvas.dataset.notes.split(",");
+canvas.setAttribute("height",whiteLength.toString());
+var notes = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+var noteNum = 0;
+var n = 0;
+var currentNote = "";
+var whiteNum = 0;
+var blackNum = 0;
+var s=0;
+var t=0;
+var blackColour = "black";
+// pre-check to set width
+while(n < selectedNotesList.length) {
+	width = width+167*scale;
+	for(i=0;i<12;i++) {
+		noteNum = notes.indexOf(canvas.dataset.tonic)+i;
+		if (noteNum > notes.length-1) {
+			noteNum = noteNum-12;
+		}
+		currentNote = notes[noteNum]
+		if (currentNote === selectedNotesList[n]) {
+			n = n+1;
+		}
+	}
+}
+n=0;
+// if tonic note is black, add an extra white note to the front to show it fully
+if (canvas.dataset.tonic.length === 2) {
+	width = width + whiteWidth;
+}
+// if the last selected note is black and is a half-step below the tonic, add an extra note of width to show it fully
+if (selectedNotesList[selectedNotesList.length-1] === canvas.dataset.tonic+"b") {
+	width = width+whiteWidth;
+}
+canvas.setAttribute("width",width.toString());
+
+//if the tonic note is black, draw in the extra white note at the front
+if (canvas.dataset.tonic.length === 2) {
+	noteNum = notes.indexOf(selectedNotesList[0]);
+	currentNote = notes[noteNum];
+	context.fillStyle = "black";
+	context.fillRect(0,0,whiteWidth,whiteLength);
+	context.fillStyle = "white";
+	context.fillRect(1,1,whiteWidth-2,whiteLength-2);
+	if (currentNote != "Gb" && currentNote != "Db") {
+		context.fillStyle = "black";
+		context.fillRect(whiteWidth*(blackNum)-(blackWidth/2),0,blackWidth,blackLength);
+	}
+	whiteNum = 1;
+	blackNum = 1;
+}
+// if the last selected note is black, draw in the extra white note at the end
+if (selectedNotesList[selectedNotesList.length-1] === canvas.dataset.tonic+"b") {
+	context.fillStyle = "black";
+	context.fillRect(width-whiteWidth,0,whiteWidth,whiteLength);
+	context.fillStyle = "white";
+	context.fillRect(width-whiteWidth+1,1,whiteWidth-2,whiteLength-2);
+}
+
+while (n < selectedNotesList.length) {
+	for (i=0;i<12;i++) {
+		noteNum = notes.indexOf(canvas.dataset.tonic)+i;
+		if (noteNum > notes.length-1) {
+			noteNum = noteNum-12;
+		}
+		currentNote = notes[noteNum];
+
+		if (currentNote.length === 1) {
+			context.fillStyle = "black";
+			context.fillRect(whiteWidth*whiteNum,0,whiteWidth,whiteLength);
+			if (currentNote === selectedNotesList[n]) {
+				context.fillStyle = "lightBlue";
+				n = n+1;
+			}
+			else {
+				context.fillStyle = "white";
+			}
+			context.fillRect((whiteWidth*whiteNum)+1,1,whiteWidth-2,whiteLength-2);
+
+			if (currentNote != "C" && currentNote != "F") {
+				context.fillStyle = "black";
+				context.fillRect(whiteWidth*(blackNum)-(blackWidth/2),0,blackWidth,blackLength);
+				context.fillStyle = blackColour;
+				context.fillRect((whiteWidth*(blackNum)-(blackWidth/2))+2,2,blackWidth-4,blackLength-4);
+				blackNum = blackNum + 1;
+			}
+			else {
+				blackNum = blackNum + 1;
+			}
+			whiteNum = whiteNum + 1;
+		}
+		else {
+			if ((currentNote) === selectedNotesList[n]) {
+				blackColour = "lightblue";
+				n = n+1;
+			}
+			else {
+				blackColour = "black";
+			}
+		}
+	}
+}
+// draw the final black note
+context.fillStyle = "black";
+context.fillRect(whiteWidth*(blackNum)-(blackWidth/2),0,blackWidth,blackLength);
+context.fillStyle = blackColour;
+context.fillRect((whiteWidth*(blackNum)-(blackWidth/2))+2,2,blackWidth-4,blackLength-4);
+</script>

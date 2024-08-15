@@ -1,75 +1,20 @@
-# format the scale notes to look like piano keys that are selectable in anki
-# the piano keys will show a full octave starting on a random note
-# chard types:
-# major keys
-    # key signatures (list of sharps and flats)
-    # scale notes cards (list of notes in a scale)
-        # major modes, harmonic major modes, half-whole diminished, whole-tone, bebop major, bebop dorian, bebop dominant, pentatonic modes, blues scale, in-sen scale
-    # degrees of the major scale
-    # major modes
-    # harmonic major modes
-    # major chord cards
-        # guide tones inversions A and B
-            # minor7, major7
-        # triads 3 inversions
-            # major, augmented
-        # 4 note chords 4 inversions
-            # minor7, major7
-        # rootless chords inversions A and B
-            # minor9, dominant13, major9 
-        # extended chords
-            # minor9 minor11 minor13 dominant9 dominant#11 dominant13#11 major9, major#11, major13, major6, 6/9
-
-# minor keys
-    # key signatures
-    # scale notes cards
-        # natural minor, melodic minor modes, harmonic minor modes, whole-half diminished, bebop melodic minor
-    # melodic minor modes
-    # harmonic minor modes
-    # minor chord cards
-        # guide tones inversions A and B
-            # minor7b5 minor-major7
-        # triads 3 inversions
-            # minor
-        # 4 note chords 4 inversions
-            # minor7b5, minor-major7
-        # rootless chords inversions A and B
-            #minor9b5, dominant7b9b13, minor-major9
-        # extended chords
-            # minor6, minor6/9, minor6b13
-# all keys
-    # intervals
-    # chords -> scales
-    # scales -> chords
-    # slash chord equivalents
-    # chord cards
-        # guide tones inversions A and B
-            # dominant7 diminished7
-        # triads 3 inversions
-            # diminished
-        # 4 note chords 4 inversions
-            # dominant7 diminished7
-        # extended chords
-            # sus2 sus4 7sus2 7sus4 
-
+#TODO add chord substitution cards ala Jazz Theory Book
+#TODO add more chord voicing cards
+#TODO? add augmented scale?
+#TODO make sure chord-scale cards agree with https://newjazz.dk/Compendiums/scales_of_harmonies.pdf
 import re
-keySigCards = open("keySigCards.txt","w")
-scaleNoteCards = open("scaleNoteCards.txt","w")
-degreeCards = open("scaleDegreeCards.txt","w")
-voicingCards = open("voicingCards.txt","w")
-modeCards = open("scaleModeCards.txt","w")
-intervalCards = open("intervalCards.txt","w")
-chordScaleCards = open("chordScaleCards.txt","w")
-slashChordCards = open("slashChordCards.txt","w")
+theoryCardsImg = open("theoryCardsImg.txt","w")
+theoryCards = open("theoryCards.txt","w")
 notes = ["C","D","E","F","G","A","B"]
 keysEnharmonic = ["C","C♯/D♭","D","D♯/E♭","E","F","F♯/G♭","G","G♯/A♭","A","A♯/B♭","B/C♭"]
 sharpKeysMajor = ["G","D","A","E","B","F♯","C♯"]
 flatKeysMajor = ["F","B♭","E♭","A♭","D♭","G♭","C♭"]
 sharpKeysMinor = ["E","B","F♯","C♯","G♯","D♯","A♯"]
 flatKeysMinor = ["D","G","C","F","B♭","E♭","A♭"]
-majorKeys = ["C","F","B♭","E♭","A♭","C♯/D♭","F♯/G♭","B/C♭","E","A","D","G"]
-minorKeys = ["A","D","G","C","F","A♯/B♭","D♯/E♭","G♯/A♭","C♯","F♯","B","E"]
+majorKeys = ["C","F","B♭","E♭","A♭","D♭","F♯/G♭","B","E","A","D","G"]
+minorKeys = ["A","D","G","C","F","B♭","D♯/E♭","G♯","C♯","F♯","B","E"]
 orderOfAccidentals = ["B","E","A","D","G","C","F"]
+modeDegrees = ["2nd","3rd","4th","5th","6th","7th"]
 def keysContains(key, keyList):
     keyNum = -1
     for k in keyList:
@@ -120,6 +65,7 @@ def AlterNote(alteration, note):
 
 scaleDegrees = {"I":0,"♭II":1,"II":2,"♯II":3,"♭III":3,"III":4,"IV":5,"♯IV":6,"♭V":6,"V":7,"♯5":8,"♭VI":8,"VI":9,"♯VI":10,"♭VII":10,"VII":11}
 def getDegree(key,degree):
+    degree = degree.upper()
     keyIndex = keysContains(key, keysEnharmonic)
     degreeNum = scaleDegrees[degree]
     degreeIndex = keyIndex+degreeNum
@@ -173,17 +119,23 @@ def GetImageString(key):
     else:
         return key
 
-
-
-def GetImage(key,keyList):
+def GetImage(key,blueList,orangeList):
     keyString = GetImageString(key)
-    imageStr = ";<canvas id=\"keyboard\" style=\"border:1px solid black\" data-tonic=\""+keyString+"\" data-notes=\""
-    for key in keyList:
-        imageStr += GetImageString(key)
-        imageStr += ","
-    if not imageStr == "<canvas id=\"keyboard\" data-tonic=\""+keyString+"\" data-notes=\"":
-        imageStr = imageStr[:-1]
-    imageStr += "\"/>"
+    imageStr = ";<canvas id=\"keyboard\" style=\"border:1px solid black\" data-tonic=\""+keyString+"\" data-highlight1=\""
+    blueStr = ""
+    orangeStr = ""
+    for key in blueList:
+        blueStr += GetImageString(key)
+        blueStr += ","
+    if not blueStr == "":
+        blueStr = blueStr[:-1]
+    imageStr += (blueStr+"\" data-highlight2=\"")
+    for key in orangeList:
+        orangeStr += GetImageString(key)
+        orangeStr += ","
+    if not orangeStr == "":
+        orangeStr = orangeStr[:-1]
+    imageStr += (orangeStr+"\"/>")
     return imageStr
 
 keys = ["C","F","A♯","B♭","D♯","E♭","G♯","A♭","C♯","D♭","F♯","G♭","B","C♭","E","A","D","G"]
@@ -195,15 +147,12 @@ for key in keys:
     if not majorKeyNum == -1:
         # key-signature cards
         majorKeyList = getKeySignature(key, majorKeyNum)
-        majorKeyString = ""
-        for i in majorKeyList:
-            majorKeyString += i+" "
-        if majorKeyString == "":
-            majorKeyString = "no sharps or flats"
-        else:
-            majorKeyString = majorKeyString[:-1]
-        majorKeyImage = GetImage(key,majorKeyList)
-        keySigCards.write("the key signature of {{c1::"+key+"}} major is {{c2::"+majorKeyString+"}}"+majorKeyImage+"\n")
+
+        # relative minor cards
+        relativeMinor = getDegree(key,"VI")
+        if  keysContains(relativeMinor,minorKeys) != -1:
+            theoryCards.write("the relative minor of "+key+" major is {{c1::"+relativeMinor+"}} minor;musictheory::relativekeys\n")
+
 
         # 7 note major scales
         # major + modes, harmonic major + modes
@@ -221,6 +170,7 @@ for key in keys:
         sharpFifth = AlterNote("sharp",majorList[4])
         flatSixth = AlterNote("flat",majorList[5])
         sixth = majorList[5]
+        sharpSixth = AlterNote("sharp",majorList[5])
         flatSeventh = AlterNote("flat",majorList[6])
         seventh = majorList[6]
         # major modes
@@ -282,34 +232,34 @@ for key in keys:
         mixolydianFlatTwoString = mixolydianFlatTwoString[:-1]
         lydianAugmentedSharpTwoString = lydianAugmentedSharpTwoString[:-1]
         locrianDoubleFlatSevenString = locrianDoubleFlatSevenString[:-1]
-        majorImage = GetImage(key,majorList)
-        dorianImage = GetImage(key,dorianList)
-        phrygianImage = GetImage(key,phrygianList)
-        lydianImage = GetImage(key,lydianList)
-        mixolydianImage = GetImage(key,mixolydianList)
-        aeolianImage = GetImage(key,aeolianList)
-        locrianImage = GetImage(key,locrianList)
-        hMajorImage = GetImage(key,hMajorList)
-        dorianFlatFiveImage = GetImage(key,dorianFlatFiveList)
-        phrygianFlatFourImage = GetImage(key,phrygianFlatFourList)
-        lydianFlatThreeImage = GetImage(key,lydianFlatThreeList)
-        mixolydianFlatTwoImage = GetImage(key,mixolydianFlatTwoList)
-        lydianAugmentedSharpTwoImage = GetImage(key,lydianAugmentedSharpTwoList)
-        locrianDoubleFlatSevenImage = GetImage(key,locrianDoubleFlatSevenList)
-        scaleNoteCards.write("the notes in the "+key+" major scale are {{c1::"+majorString+"}}"+majorImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" dorian scale are {{c1::"+dorianString+"}}"+dorianImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" phrygian scale are {{c1::"+phrygianString+"}}"+phrygianImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" lydian scale are {{c1::"+lydianString+"}}"+lydianImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" mixolydian scale are {{c1::"+mixolydianString+"}}"+mixolydianImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" aeolian scale are {{c1::"+aeolianString+"}}"+aeolianImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" locrian scale are {{c1::"+locrianString+"}}"+locrianImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" harmonic major scale are {{c1::"+hMajorString+"}}"+hMajorImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" dorian♭5 scale are {{c1::"+dorianFlatFiveString+"}}"+dorianFlatFiveImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" phrygian♭4 scale are {{c1::"+phrygianFlatFourString+"}}"+phrygianFlatFourImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" lydian♭3 scale are {{c1::"+lydianFlatThreeString+"}}"+lydianFlatThreeImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" mixolydian♭2 scale are {{c1::"+mixolydianFlatTwoString+"}}"+mixolydianFlatTwoImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" lydian augmented♯2 scale are {{c1::"+lydianAugmentedSharpTwoString+"}}"+lydianAugmentedSharpTwoImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" locrian♭♭7 scale are {{c1::"+locrianDoubleFlatSevenString+"}}"+locrianDoubleFlatSevenImage+"\n")
+        majorImage = GetImage(key,majorList,[])
+        dorianImage = GetImage(key,dorianList,[])
+        phrygianImage = GetImage(key,phrygianList,[])
+        lydianImage = GetImage(key,lydianList,[])
+        mixolydianImage = GetImage(key,mixolydianList,[])
+        aeolianImage = GetImage(key,aeolianList,[])
+        locrianImage = GetImage(key,locrianList,[])
+        hMajorImage = GetImage(key,hMajorList,[])
+        dorianFlatFiveImage = GetImage(key,dorianFlatFiveList,[])
+        phrygianFlatFourImage = GetImage(key,phrygianFlatFourList,[])
+        lydianFlatThreeImage = GetImage(key,lydianFlatThreeList,[])
+        mixolydianFlatTwoImage = GetImage(key,mixolydianFlatTwoList,[])
+        lydianAugmentedSharpTwoImage = GetImage(key,lydianAugmentedSharpTwoList,[])
+        locrianDoubleFlatSevenImage = GetImage(key,locrianDoubleFlatSevenList,[])
+        theoryCardsImg.write("the notes in the "+key+" major scale are {{c1::"+majorString+"}}"+majorImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" dorian scale are {{c1::"+dorianString+"}}"+dorianImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" phrygian scale are {{c1::"+phrygianString+"}}"+phrygianImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" lydian scale are {{c1::"+lydianString+"}}"+lydianImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" mixolydian scale are {{c1::"+mixolydianString+"}}"+mixolydianImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" aeolian scale are {{c1::"+aeolianString+"}}"+aeolianImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" locrian scale are {{c1::"+locrianString+"}}"+locrianImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" harmonic major scale are {{c1::"+hMajorString+"}}"+hMajorImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" dorian♭5 scale are {{c1::"+dorianFlatFiveString+"}}"+dorianFlatFiveImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" phrygian♭4 scale are {{c1::"+phrygianFlatFourString+"}}"+phrygianFlatFourImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" lydian♭3 scale are {{c1::"+lydianFlatThreeString+"}}"+lydianFlatThreeImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" mixolydian♭2 scale are {{c1::"+mixolydianFlatTwoString+"}}"+mixolydianFlatTwoImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" lydian augmented♯2 scale are {{c1::"+lydianAugmentedSharpTwoString+"}}"+lydianAugmentedSharpTwoImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" locrian♭♭7 scale are {{c1::"+locrianDoubleFlatSevenString+"}}"+locrianDoubleFlatSevenImage+";musictheory::scales\n")
 
         # 8 note scales
         # half-whole diminished, bebop dorian, bebop dominant, bebop major
@@ -326,57 +276,127 @@ for key in keys:
         bebopDorianString = bebopDorianString[:-1]
         bebopDominantString = bebopDominantString[:-1]
         bebopMajorString = bebopMajorString[:-1]
-        bebopDorianImage = GetImage(key,bebopDorianList)
-        bebopDominantImage = GetImage(key,bebopDominantList)
-        bebopMajorImage = GetImage(key,bebopMajorList)
-        scaleNoteCards.write("the notes in the "+key+" bebop dorian scale are {{c1::"+bebopDorianString+"}}"+bebopDorianImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" bebop dominant scale are {{c1::"+bebopDominantString+"}}"+bebopDominantImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" bebop major scale are {{c1::"+bebopMajorString+"}}"+bebopMajorImage+"\n")
+        bebopDorianImage = GetImage(key,bebopDorianList,[])
+        bebopDominantImage = GetImage(key,bebopDominantList,[])
+        bebopMajorImage = GetImage(key,bebopMajorList,[])
+        theoryCardsImg.write("the notes in the "+key+" bebop dorian scale are {{c1::"+bebopDorianString+"}}"+bebopDorianImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" bebop dominant scale are {{c1::"+bebopDominantString+"}}"+bebopDominantImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" bebop major scale are {{c1::"+bebopMajorString+"}}"+bebopMajorImage+";musictheory::scales\n")
 
         # 5 note scales
         # major pentatonic, in-sen
         insenList = [key, flatSecond]+majorList[3:5]+[flatSeventh]
+        majorPentatonicList = [key,second,third,fifth,sixth]
         insenString = ""
+        majorPentatonicString = ""
         for i in range(5):
             insenString += insenList[i]+" "
+            majorPentatonicString += majorPentatonicList[i]+" "
         insenString = insenString[:-1]
-        insenImage = GetImage(key,insenList)
-        scaleNoteCards.write("the notes in the "+key+" in-sen scale are {{c1::"+insenString+"}}"+insenImage+"\n")
+        majorPentatonicString = majorPentatonicString[:-1]
+        insenImage = GetImage(key,insenList,[])
+        majorPentatonicImage = GetImage(key,majorPentatonicList,[])
+        theoryCardsImg.write("the notes in the "+key+" in-sen scale are {{c1::"+insenString+"}}"+insenImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" major pentatonic scale are {{c1::"+majorPentatonicString+"}}"+majorPentatonicImage+";musictheory::scales\n")
 
         # 6 note scales
-        # whole-tone scale
+        # whole-tone scale, augmented scale
         wholeToneList = majorList[:3]+[sharpFourth, sharpFifth, flatSeventh]
+        augmentedList = [key,sharpSecond,third,fifth,flatSixth,seventh]
         wholeToneString = ""
+        augmentedString = ""
         for i in range(6):
             wholeToneString += wholeToneList[i] + " "
+            augmentedString += augmentedList[i] + " "
         wholeToneString = wholeToneString[:-1]
-        wholeToneImage = GetImage(key,wholeToneList)
-        scaleNoteCards.write("the notes in the "+key+" whole-tone scale are {{c1::"+wholeToneString+"}}"+wholeToneImage+"\n")
+        augmentedString = augmentedString[:-1]
+        wholeToneImage = GetImage(key,wholeToneList,[])
+        augmentedImage = GetImage(key,augmentedList,[])
+        theoryCardsImg.write("the notes in the "+key+" whole-tone scale are {{c1::"+wholeToneString+"}}"+wholeToneImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" augmented scale are {{c1::"+augmentedString+"}}"+augmentedImage+";musictheory::scales\n")
 
         # major modes
-        majorModes = {"2nd":second+" dorian","3rd":third+" phrygian","4th":fourth+" lydian","5th":fifth+" mixolydian","6th":sixth+" aeolian","7th":seventh+" locrian"}
-        for mode in majorModes:
-            modeCards.write("{{c1::"+majorModes[mode]+"}} is the {{c2::"+mode+"}} mode of {{c3::"+key+" major}}\n")
+        majorModes = [second+" dorian",third+" phrygian",fourth+" lydian",fifth+" mixolydian",sixth+" aeolian",seventh+" locrian"]
+        majorModeImages = [dorianImage,phrygianImage,lydianImage,mixolydianImage,aeolianImage,locrianImage]
+        for i in range(6):
+            mode = modeDegrees[i]
+            majorMode = majorModes[i]
+            majorModeImage = majorModeImages[i]
+            theoryCardsImg.write("{{c1::"+majorMode+"}} is the "+mode+" mode of {{c2::"+key+" major}}"+majorModeImage+";musictheory::modes\n")
 
         # harmonic major modes
-        harmonicMajorModes = {"2nd":second+" dorian♭5","3rd":third+" phrygian♭4","4th":fourth+" lydian♭3","5th":fifth+" mixolydian♭2","6th":flatSixth+" lydian augmented♯2","7th":seventh+" locrian♭♭7"}
-        for mode in harmonicMajorModes:
-            modeCards.write("{{c1::"+harmonicMajorModes[mode]+"}} is the {{c2::"+mode+"}} mode of {{c3::"+key+" harmonic major}}\n")
+        harmonicMajorModes = [second+" dorian♭5",third+" phrygian♭4",fourth+" lydian♭3",fifth+" mixolydian♭2",flatSixth+" lydian augmented♯2",seventh+" locrian♭♭7"]
+        harmonicMajorModeImages = [dorianFlatFiveImage,phrygianFlatFourImage,lydianFlatThreeImage,mixolydianFlatTwoImage,lydianAugmentedSharpTwoImage,locrianDoubleFlatSevenImage]
+        for i in range(6):
+            mode = modeDegrees[i]
+            harmonicMajorMode = harmonicMajorModes[i]
+            harmonicMajorModeImage = harmonicMajorModeImages[i]
+            theoryCardsImg.write("{{c1::"+harmonicMajorMode+"}} is the "+mode+" mode of {{c2::"+key+" harmonic major}}"+harmonicMajorModeImage+";musictheory::modes\n")
+        
+        # key signatures
+        majorKeyString = ""
+        for i in majorKeyList:
+            majorKeyString += i+" "
+        if majorKeyString == "":
+            majorKeyString = "no sharps or flats"
+        else:
+            majorKeyString = majorKeyString[:-1]
+        majorKeyImage = GetImage(key,majorList,majorKeyList)
+        theoryCardsImg.write("the key signature of {{c1::"+key+"}} major is {{c2::"+majorKeyString+"}}"+majorKeyImage+";musictheory::keysignatures\n")
 
-        # scale degree cards
-        degrees = {"♭2nd":flatSecond,"2nd":second,"3rd":third,"4th":fourth,"♯4th":sharpFourth,"♭5th":flatFifth,"5th":fifth,"♯5th":sharpFifth,"♭6th":flatSixth,"6th":sixth,"♭7th":flatSeventh,"♭9th":flatSecond,"9th":second,"♯9th":sharpSecond,"10th":third,"11th":fourth,"♯11th":sharpFourth,"♭12th":flatFifth,"12th":fifth,"♯12th":sharpFifth,"♭13th":flatSixth,"13th":sixth}
-        for degree in degrees:
-            degreeCards.write("{{c1::"+degrees[degree]+"}} is the "+degree+" of {{c2::"+key+"}} major\n")
+        # major scale degree cards
+        majorDegrees = {"♭2nd":flatSecond,"2nd":second,"♯2nd":sharpSecond,"3rd":third,"4th":fourth,"♯4th":sharpFourth,"♭5th":flatFifth,"5th":fifth,"♯5th":sharpFifth,"♭6th":flatSixth,"6th":sixth,"♭7th":flatSeventh,"7th":seventh,"♭9th":flatSecond,"9th":second,"♯9th":sharpSecond,"11th":fourth,"♯11th":sharpFourth,"♭13th":flatSixth,"13th":sixth}
+        for degree in majorDegrees:
+            degreeImage = GetImage(key,majorList,[majorDegrees[degree]])
+            theoryCardsImg.write("{{c1::"+majorDegrees[degree]+"}} is the "+degree+" of {{c2::"+key+"}} major"+degreeImage+";musictheory::scaledegrees\n")
+        # major scale degrees 2nd cloze
+        majorDegrees1 = {"♭2nd/♭9th":flatSecond,"2nd/9th":second,"♯2nd/♯9th":sharpSecond,"3rd":third,"4th/11th":fourth,"♯4th/♯11th":sharpFourth,"♭5th":flatFifth,"5th":fifth,"♯5th":sharpFifth,"♭6th/♭13th":flatSixth,"6th/13th":sixth,"♭7th":flatSeventh,"7th":seventh}
+        for degree in majorDegrees1:
+            degreeImage = GetImage(key,majorList,[majorDegrees1[degree]])
+            theoryCardsImg.write(majorDegrees1[degree]+" is the {{c1::"+degree+"}} of "+key+" major"+degreeImage+";musictheory::scaledegrees\n")
+
+        # major triad chord functional harmony
+        majorDegrees = ["I","ii","iii","IV","V","vi","vii"]
+        functionalTriadsMajor = ["","-","-","","","-","o"]
+        for i in range(len(majorDegrees)):
+            degree = majorDegrees[i]
+            majorTriad = functionalTriadsMajor[i]
+            chordList = []
+            for j in range(0,6,2):
+                n = i+j
+                if n > 6:
+                    n -= 7
+                chordList = chordList + [majorList[n]]
+            majorTriadNote = majorList[i]
+            majorTriadChordImage = GetImage(key, majorList+majorList, chordList)
+            theoryCardsImg.write("{{c1::"+majorTriadNote+majorTriad+"}} is the {{c2::"+degree+"}} triad of {{c3::"+key+"}} major"+majorTriadChordImage+";musictheory::functionalharmony\n")
+
+        # major 7th chord functional harmony
+        majorDegrees = ["I","ii","iii","IV","V","vi","vii"]
+        functional7thsMajor = ["Δ7","-7","-7","Δ7","7","-7","o7"]
+        for i in range(len(majorDegrees)):
+            degree = majorDegrees[i]
+            major7thChord = functional7thsMajor[i]
+            chordList = []
+            for j in range(0,8,2):
+                n = i+j
+                if n > 6:
+                    n -= 7
+                chordList = chordList + [majorList[n]]
+            major7thChordNote = majorList[i]
+            major7thChordImage = GetImage(key, majorList+majorList, chordList)
+            theoryCardsImg.write("{{c1::"+major7thChordNote+major7thChord+"}} is the {{c2::"+degree+"}} 7th chord of {{c3::"+key+"}} major"+major7thChordImage+";musictheory::functionalharmony\n")
+
 
         # major guide tones cards
-        m7AGuideTones = GetImage(key,[flatThird,flatSeventh])
-        M7AGuideTones = GetImage(key,[third,seventh])
-        m7BGuideTones = GetImage(key,[flatSeventh,flatThird])
-        M7BGuideTones = GetImage(key,[seventh,third])
-        voicingCards.write("the guide tones of "+key+"-7 in inversion A are {{c1::"+flatThird+" and "+flatSeventh+"}} (in order from lowest to highest)"+m7AGuideTones+"\n")
-        voicingCards.write("the guide tones of "+key+"Δ7 in inversion A are {{c1::"+third+" and "+seventh+"}} (in order from lowest to highest)"+M7AGuideTones+"\n")
-        voicingCards.write("the guide tones of "+key+"-7 in inversion B are {{c1::"+flatSeventh+" and "+flatThird+"}} (in order from lowest to highest)"+m7BGuideTones+"\n")
-        voicingCards.write("the guide tones of "+key+"Δ7 in inversion B are {{c1::"+seventh+" and "+third+"}} (in order from lowest to highest)"+M7BGuideTones+"\n")
+        m7AGuideTones = GetImage(key,[flatThird,flatSeventh],[])
+        M7AGuideTones = GetImage(key,[third,seventh],[])
+        m7BGuideTones = GetImage(key,[flatSeventh,flatThird],[])
+        M7BGuideTones = GetImage(key,[seventh,third],[])
+        theoryCardsImg.write("the guide tones of "+key+"-7 in inversion A are {{c1::"+flatThird+" and "+flatSeventh+"}} (in order from lowest to highest)"+m7AGuideTones+";musictheory::voicings\n")
+        theoryCardsImg.write("the guide tones of "+key+"Δ7 in inversion A are {{c1::"+third+" and "+seventh+"}} (in order from lowest to highest)"+M7AGuideTones+";musictheory::voicings\n")
+        theoryCardsImg.write("the guide tones of "+key+"-7 in inversion B are {{c1::"+flatSeventh+" and "+flatThird+"}} (in order from lowest to highest)"+m7BGuideTones+";musictheory::voicings\n")
+        theoryCardsImg.write("the guide tones of "+key+"Δ7 in inversion B are {{c1::"+seventh+" and "+third+"}} (in order from lowest to highest)"+M7BGuideTones+";musictheory::voicings\n")
 
         # 3 note major chord voicings cards
         # major augmented
@@ -399,10 +419,10 @@ for key in keys:
                 augmentedChordList += [augmentedChordNotes[note]]
             majorChordString = majorChordString[:-1]
             augmentedChordString = augmentedChordString[:-1]
-            majorImage = GetImage(key,majorChordList)
-            augmentedImage = GetImage(key,augmentedChordList)
-            voicingCards.write("the notes in a "+key+" chord in "+inversion+" are {{c1::"+majorChordString+"}} (in order from lowest to highest)"+majorImage+"\n")
-            voicingCards.write("the notes in a "+key+" augmented chord in "+inversion+" are {{c1::"+augmentedChordString+"}} (in order from lowest to highest)"+augmentedImage+"\n")
+            majorImage = GetImage(key,majorChordList,[])
+            augmentedImage = GetImage(key,augmentedChordList,[])
+            theoryCardsImg.write("the notes in a "+key+" chord in "+inversion+" are {{c1::"+majorChordString+"}} (in order from lowest to highest)"+majorImage+";musictheory::voicings\n")
+            theoryCardsImg.write("the notes in a "+key+" augmented chord in "+inversion+" are {{c1::"+augmentedChordString+"}} (in order from lowest to highest)"+augmentedImage+";musictheory::voicings\n")
 
         # 4 note major chord voicing cards
         # minor7 major7
@@ -424,10 +444,10 @@ for key in keys:
                 major7ChordList += [major7ChordNotes[note]]
             minor7ChordString = minor7ChordString[:-1]
             major7ChordString = major7ChordString[:-1]
-            minor7Image = GetImage(key,minor7ChordList)
-            major7Image = GetImage(key,major7ChordList)
-            voicingCards.write("the notes in a "+key+"-7 chord in "+inversion+" are {{c1::"+minor7ChordString+"}} (in order from lowest to highest)"+minor7Image+"\n")
-            voicingCards.write("the notes in a "+key+"Δ7 chord in "+inversion+" are {{c1::"+major7ChordString+"}} (in order from lowest to highest)"+major7Image+"\n")
+            minor7Image = GetImage(key,minor7ChordList,[])
+            major7Image = GetImage(key,major7ChordList,[])
+            theoryCardsImg.write("the notes in a "+key+"-7 chord in "+inversion+" are {{c1::"+minor7ChordString+"}} (in order from lowest to highest)"+minor7Image+";musictheory::voicings\n")
+            theoryCardsImg.write("the notes in a "+key+"Δ7 chord in "+inversion+" are {{c1::"+major7ChordString+"}} (in order from lowest to highest)"+major7Image+";musictheory::voicings\n")
 
         # rootless chord cards in A and B voicings
         # minor9 dominant13 major9
@@ -456,12 +476,12 @@ for key in keys:
             rootlessiiString = rootlessiiString[:-1]
             rootlessVString = rootlessVString[:-1]
             rootlessIString = rootlessIString[:-1]
-            rootlessiiImage = GetImage(key,rootlessiiList)
-            rootlessVImage = GetImage(key,rootlessVList)
-            rootlessIImage = GetImage(key,rootlessIList)
-            voicingCards.write("the notes in a type "+rootlessInversion+" rootless "+key+"-9 chord are {{c1::"+rootlessiiString+"}} (in order from lowest to highest)"+rootlessiiImage+"\n")
-            voicingCards.write("the notes in a type "+rootlessInversion+" rootless "+key+"13 chord are {{c1::"+rootlessVString+"}} (in order from lowest to highest)"+rootlessVImage+"\n")
-            voicingCards.write("the notes in a type "+rootlessInversion+" rootless "+key+"Δ9 chord are {{c1::"+rootlessIString+"}} (in order from lowest to highest)"+rootlessIImage+"\n")
+            rootlessiiImage = GetImage(key,rootlessiiList,[])
+            rootlessVImage = GetImage(key,rootlessVList,[])
+            rootlessIImage = GetImage(key,rootlessIList,[])
+            theoryCardsImg.write("the notes in a type "+rootlessInversion+" rootless "+key+"-9 chord are {{c1::"+rootlessiiString+"}} (in order from lowest to highest)"+rootlessiiImage+";musictheory::voicings\n")
+            theoryCardsImg.write("the notes in a type "+rootlessInversion+" rootless "+key+"13 chord are {{c1::"+rootlessVString+"}} (in order from lowest to highest)"+rootlessVImage+";musictheory::voicings\n")
+            theoryCardsImg.write("the notes in a type "+rootlessInversion+" rootless "+key+"Δ9 chord are {{c1::"+rootlessIString+"}} (in order from lowest to highest)"+rootlessIImage+";musictheory::voicings\n")
 
         # extended major chord voicing cards
         # 4 note extended major chords
@@ -478,12 +498,12 @@ for key in keys:
         major6String = major6String[:-1]
         rootless69String = rootless69String[:-1]
         rootlessMajor13String = rootlessMajor13String[:-1]
-        major6Image = GetImage(key,major6List)
-        rootless69Image = GetImage(key,rootless69List)
-        rootlessMajor13Image = GetImage(key,rootlessMajor13List)
-        voicingCards.write("the notes in a "+key+"6 chord are {{c1::"+major6String+"}} (in order from lowest to highest)"+major6Image+"\n")
-        voicingCards.write("the notes in a type A rootless "+key+"6/9 chord are {{c1::"+rootless69String+"}} (in order from lowest to highest)"+rootless69Image+"\n")
-        voicingCards.write("the notes in a type B rootless "+key+"Δ13 chord are {{c1::"+rootlessMajor13String+"}} (in order from lowest to highest)"+rootlessMajor13Image+"\n")
+        major6Image = GetImage(key,major6List,[])
+        rootless69Image = GetImage(key,rootless69List,[])
+        rootlessMajor13Image = GetImage(key,rootlessMajor13List,[])
+        theoryCardsImg.write("the notes in a "+key+"6 chord are {{c1::"+major6String+"}} (in order from lowest to highest)"+major6Image+";musictheory::voicings\n")
+        theoryCardsImg.write("the notes in a type A rootless "+key+"6/9 chord are {{c1::"+rootless69String+"}} (in order from lowest to highest)"+rootless69Image+";musictheory::voicings\n")
+        theoryCardsImg.write("the notes in a type B rootless "+key+"Δ13 chord are {{c1::"+rootlessMajor13String+"}} (in order from lowest to highest)"+rootlessMajor13Image+";musictheory::voicings\n")
 
         # 5 note extended major chords
         minor9List = [key,flatThird,fifth,flatSeventh,second]
@@ -499,12 +519,12 @@ for key in keys:
         minor9String = minor9String[:-1]
         major9String = major9String[:-1]
         sixNineString = sixNineString[:-1]
-        minor9Image = GetImage(key,minor9List)
-        major9Image = GetImage(key,major9List)
-        sixNineImage = GetImage(key,sixNineList)
-        voicingCards.write("the notes in a "+key+"-9 chord are {{c1::"+minor9String+"}} (in order from lowest to highest)"+minor9Image+"\n")
-        voicingCards.write("the notes in a "+key+"Δ9 chord are {{c1::"+major9String+"}} (in order from lowest to highest)"+major9Image+"\n")
-        voicingCards.write("the notes in a "+key+"6/9 chord are {{c1::"+sixNineString+"}} (in order from lowest to highest)"+sixNineImage+"\n")
+        minor9Image = GetImage(key,minor9List,[])
+        major9Image = GetImage(key,major9List,[])
+        sixNineImage = GetImage(key,sixNineList,[])
+        theoryCardsImg.write("the notes in a "+key+"-9 chord are {{c1::"+minor9String+"}} (in order from lowest to highest)"+minor9Image+";musictheory::voicings\n")
+        theoryCardsImg.write("the notes in a "+key+"Δ9 chord are {{c1::"+major9String+"}} (in order from lowest to highest)"+major9Image+";musictheory::voicings\n")
+        theoryCardsImg.write("the notes in a "+key+"6/9 chord are {{c1::"+sixNineString+"}} (in order from lowest to highest)"+sixNineImage+";musictheory::voicings\n")
 
         # 6 note extended major chords
         minor11List = [key,flatThird,fifth,flatSeventh,second,fourth]
@@ -516,10 +536,10 @@ for key in keys:
             majorSharp11String += majorSharp11List[i]+" "
         minor11String = minor11String[:-1]
         majorSharp11String = majorSharp11String[:-1]
-        minor11Image = GetImage(key,minor11List)
-        majorSharp11Image = GetImage(key,majorSharp11List)
-        voicingCards.write("the notes in a "+key+"-11 chord are {{c1::"+minor11String+"}} (in order from lowest to highest)"+minor11Image+"\n")
-        voicingCards.write("the notes in a "+key+"Δ♯11 chord are {{c1::"+majorSharp11String+"}} (in order from lowest to highest)"+majorSharp11Image+"\n")
+        minor11Image = GetImage(key,minor11List,[])
+        majorSharp11Image = GetImage(key,majorSharp11List,[])
+        theoryCardsImg.write("the notes in a "+key+"-11 chord are {{c1::"+minor11String+"}} (in order from lowest to highest)"+minor11Image+";musictheory::voicings\n")
+        theoryCardsImg.write("the notes in a "+key+"Δ♯11 chord are {{c1::"+majorSharp11String+"}} (in order from lowest to highest)"+majorSharp11Image+";musictheory::voicings\n")
 
         # 7 note extended major chords
         minor13List = [key,flatThird,fifth,flatSeventh,second,fourth,sixth]
@@ -531,33 +551,24 @@ for key in keys:
             major13Sharp11String += major13Sharp11List[i]+" "
         minor13String = minor13String[:-1]
         major13Sharp11String = major13Sharp11String[:-1]
-        minor13Image = GetImage(key,minor13List)
-        major13Sharp11Image = GetImage(key,majorSharp11List)
-        voicingCards.write("the notes in a "+key+"-13 chord are {{c1::"+minor13String+"}} (in order from lowest to highest)"+minor13Image+"\n")
-        voicingCards.write("the notes in a "+key+"Δ13♯11 chord are {{c1::"+major13Sharp11String+"}} (in order from lowest to highest)"+major13Sharp11Image+"\n")
+        minor13Image = GetImage(key,minor13List,[])
+        major13Sharp11Image = GetImage(key,majorSharp11List,[])
+        theoryCardsImg.write("the notes in a "+key+"-13 chord are {{c1::"+minor13String+"}} (in order from lowest to highest)"+minor13Image+";musictheory::voicings\n")
+        theoryCardsImg.write("the notes in a "+key+"Δ13♯11 chord are {{c1::"+major13Sharp11String+"}} (in order from lowest to highest)"+major13Sharp11Image+";musictheory::voicings\n")
 
     if not minorKeyNum == -1:
-        # key-signature cards
         minorKeyList = getKeySignature(key, minorKeyNum)
-        minorKeyString = ""
-        for k in minorKeyList:
-            minorKeyString += k+" "
-        if minorKeyString == "":
-            minorKeyString = "no sharps or flats"
-        else:
-            minorKeyString = minorKeyString[:-1]
-        minorKeyImage = GetImage(key,minorKeyList)
-        keySigCards.write("the key signature of {{c1::"+key+"}} minor is {{c2::"+minorKeyString+"}}"+minorKeyImage+"\n")
 
         # 7 note minor scales
         minorList = getNotes(key, minorKeyList)
 
-        flatSecond = AlterNote("flat",second)
+        flatSecond = AlterNote("flat",minorList[1])
         second = minorList[1]
-        sharpSecond = AlterNote("sharp",second)
+        sharpSecond = AlterNote("sharp",minorList[1])
         third = minorList[2]
-        naturalThird = AlterNote("sharp",third)
-        flatFourth = AlterNote("flat",fourth)
+        naturalThird = AlterNote("sharp",minorList[2])
+        sharpThird = AlterNote("sharp",minorList[2])
+        flatFourth = AlterNote("flat",minorList[3])
         fourth = minorList[3]
         sharpFourth = AlterNote("sharp",minorList[3])
         flatFifth = AlterNote("flat",minorList[4])
@@ -566,17 +577,37 @@ for key in keys:
         flatSixth = AlterNote("flat",minorList[5])
         sixth = minorList[5]
         naturalSixth = AlterNote("sharp",minorList[5])
+        sharpSixth = AlterNote("sharp",minorList[5])
         diminishedSeventh = AlterNote("flat",minorList[6])
         seventh = minorList[6]
         naturalSeventh = AlterNote("sharp",minorList[6])
+        sharpSeventh = AlterNote("sharp",minorList[6])
+
+        # key signatures
+        minorKeyString = ""
+        for k in minorKeyList:
+            minorKeyString += k+" "
+        if minorKeyString == "":
+            minorKeyString = "no sharps or flats"
+        else:
+            minorKeyString = minorKeyString[:-1]
+        minorKeyImage = GetImage(key,minorList,minorKeyList)
+        theoryCardsImg.write("the key signature of {{c1::"+key+"}} minor is {{c2::"+minorKeyString+"}}"+minorKeyImage+";musictheory::keysignatures\n")
+        # relative major
+        if key in sharpKeysMinor:
+            relativeMajor = getDegree(key,"♯II")
+        else:
+            relativeMajor = getDegree(key,"♭III")
+        if  keysContains(relativeMajor,majorKeys) != -1:
+            theoryCards.write("the relative major of "+key+" minor is {{c1::"+relativeMajor+"}} major;musictheory::relativekeys\n")
 
         # melodic minor modes
         mMinorList = minorList[:5]+[naturalSixth,naturalSeventh]
         dorianFlatTwoList = [key,flatSecond,third]+minorList[3:5]+[naturalSixth]+[minorList[6]]
         lydianAugmentedList = minorList[:2]+[naturalThird,sharpFourth,sharpFifth,naturalSixth,naturalSeventh]
         lydianDominantList = minorList[:2]+[naturalThird,sharpFourth,fifth,naturalSixth,minorList[6]]
-        mixolydianFlatSixList = minorList[:2]+[naturalThird]+minorList[3:7]
-        locrianSharpTwoList = minorList[:4]+[flatFifth]+minorList[5:7]
+        aeolianDominantList = minorList[:2]+[naturalThird]+minorList[3:7]
+        halfDiminishedList = minorList[:4]+[flatFifth]+minorList[5:7]
         alteredList = [key,flatSecond,sharpSecond,flatFourth,flatFifth]+minorList[5:7]
         # harmonic minor modes
         hMinorList = minorList[:6]+[naturalSeventh]
@@ -592,8 +623,8 @@ for key in keys:
         dorianFlatTwoString = ""
         lydianAugmentedString = ""
         lydianDominantString = ""
-        mixolydianFlatSixString = ""
-        locrianSharpTwoString = ""
+        aeolianDominantString = ""
+        halfDiminishedString = ""
         alteredString = ""
         locrianNaturalSixString = ""
         augmentedMajorString = ""
@@ -608,8 +639,8 @@ for key in keys:
             dorianFlatTwoString += dorianFlatTwoList[i]+" "
             lydianAugmentedString += lydianAugmentedList[i]+" "
             lydianDominantString += lydianDominantList[i]+" "
-            mixolydianFlatSixString += mixolydianFlatSixList[i]+" "
-            locrianSharpTwoString += locrianSharpTwoList[i]+" "
+            aeolianDominantString += aeolianDominantList[i]+" "
+            halfDiminishedString += halfDiminishedList[i]+" "
             alteredString += alteredList[i]+" "
             locrianNaturalSixString += locrianNaturalSixList[i]+" "
             augmentedMajorString += augmentedMajorList[i]+" "
@@ -623,8 +654,8 @@ for key in keys:
         dorianFlatTwoString = dorianFlatTwoString[:-1]
         lydianAugmentedString = lydianAugmentedString[:-1]
         lydianDominantString = lydianDominantString[:-1]
-        mixolydianFlatSixString = mixolydianFlatSixString[:-1]
-        locrianSharpTwoString = locrianSharpTwoString[:-1]
+        aeolianDominantString = aeolianDominantString[:-1]
+        halfDiminishedString = halfDiminishedString[:-1]
         alteredString = alteredString[:-1]
         locrianNaturalSixString = locrianNaturalSixString[:-1]
         augmentedMajorString = augmentedMajorString[:-1]
@@ -632,36 +663,36 @@ for key in keys:
         phrygianDominantString = phrygianDominantString[:-1]
         lydianSharpTwoString = lydianSharpTwoString[:-1]
         superLocrianString = superLocrianString[:-1]
-        minorImage = GetImage(key,minorList)
-        hMinorImage = GetImage(key,hMinorList)
-        mMinorImage = GetImage(key,mMinorList)
-        dorianFlatTwoImage = GetImage(key,dorianFlatTwoList)
-        lydianAugmentedImage = GetImage(key,lydianAugmentedList)
-        lydianDominantImage = GetImage(key,lydianDominantList)
-        mixolydianFlatSixImage = GetImage(key,mixolydianFlatSixList)
-        locrianSharpTwoImage = GetImage(key,locrianSharpTwoList)
-        alteredImage = GetImage(key,alteredList)
-        locrianNaturalSixImage = GetImage(key,locrianNaturalSixList)
-        augmentedMajorImage = GetImage(key,augmentedMajorList)
-        dorianSharpFourImage = GetImage(key,dorianSharpFourList)
-        phrygianDominantImage = GetImage(key,phrygianDominantList)
-        lydianSharpTwoImage = GetImage(key,lydianSharpTwoList)
-        superLocrianImage = GetImage(key,superLocrianList)
-        scaleNoteCards.write("the notes in the "+key+" natural minor scale are {{c1::"+minorString+"}}"+minorImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" melodic minor scale are {{c1::"+mMinorString+"}}"+mMinorImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" dorian♭2 scale are {{c1::"+dorianFlatTwoString+"}}"+dorianFlatTwoImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" lydian augmented scale are {{c1::"+lydianAugmentedString+"}}"+lydianAugmentedImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" lydian dominant scale are {{c1::"+lydianDominantString+"}}"+lydianDominantImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" mixolydian♭6 scale are {{c1::"+mixolydianFlatSixString+"}}"+mixolydianFlatSixImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" locrian♯2 scale are {{c1::"+locrianSharpTwoString+"}}"+locrianSharpTwoImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" altered scale are {{c1::"+alteredString+"}}"+alteredImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" harmonic minor scale are {{c1::"+hMinorString+"}}"+hMinorImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" locrian♮6 scale are {{c1::"+locrianNaturalSixString+"}}"+locrianNaturalSixImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" augmented major scale are {{c1::"+augmentedMajorString+"}}"+augmentedMajorImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" dorian#4 scale are {{c1::"+dorianSharpFourString+"}}"+dorianSharpFourImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" phrygian dominant scale are {{c1::"+phrygianDominantString+"}}"+phrygianDominantImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" lydian#2 scale are {{c1::"+lydianSharpTwoString+"}}"+lydianSharpTwoImage+"\n")
-        scaleNoteCards.write("the notes in the "+key+" super-locrian scale are {{c1::"+superLocrianString+"}}"+superLocrianImage+"\n")
+        minorImage = GetImage(key,minorList,[])
+        hMinorImage = GetImage(key,hMinorList,[])
+        mMinorImage = GetImage(key,mMinorList,[])
+        dorianFlatTwoImage = GetImage(key,dorianFlatTwoList,[])
+        lydianAugmentedImage = GetImage(key,lydianAugmentedList,[])
+        lydianDominantImage = GetImage(key,lydianDominantList,[])
+        aeolianDominantImage = GetImage(key,aeolianDominantList,[])
+        halfDiminishedImage = GetImage(key,halfDiminishedList,[])
+        alteredImage = GetImage(key,alteredList,[])
+        locrianNaturalSixImage = GetImage(key,locrianNaturalSixList,[])
+        augmentedMajorImage = GetImage(key,augmentedMajorList,[])
+        dorianSharpFourImage = GetImage(key,dorianSharpFourList,[])
+        phrygianDominantImage = GetImage(key,phrygianDominantList,[])
+        lydianSharpTwoImage = GetImage(key,lydianSharpTwoList,[])
+        superLocrianImage = GetImage(key,superLocrianList,[])
+        theoryCardsImg.write("the notes in the "+key+" natural minor scale are {{c1::"+minorString+"}}"+minorImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" melodic minor scale are {{c1::"+mMinorString+"}}"+mMinorImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" dorian♭2 scale are {{c1::"+dorianFlatTwoString+"}}"+dorianFlatTwoImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" lydian augmented scale are {{c1::"+lydianAugmentedString+"}}"+lydianAugmentedImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" lydian dominant scale are {{c1::"+lydianDominantString+"}}"+lydianDominantImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" aeolian dominant scale are {{c1::"+aeolianDominantString+"}}"+aeolianDominantImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" half diminished scale are {{c1::"+halfDiminishedString+"}}"+halfDiminishedImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" altered scale are {{c1::"+alteredString+"}}"+alteredImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" harmonic minor scale are {{c1::"+hMinorString+"}}"+hMinorImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" locrian♮6 scale are {{c1::"+locrianNaturalSixString+"}}"+locrianNaturalSixImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" augmented major scale are {{c1::"+augmentedMajorString+"}}"+augmentedMajorImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" dorian#4 scale are {{c1::"+dorianSharpFourString+"}}"+dorianSharpFourImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" phrygian dominant scale are {{c1::"+phrygianDominantString+"}}"+phrygianDominantImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" lydian#2 scale are {{c1::"+lydianSharpTwoString+"}}"+lydianSharpTwoImage+";musictheory::scales\n")
+        theoryCardsImg.write("the notes in the "+key+" super-locrian scale are {{c1::"+superLocrianString+"}}"+superLocrianImage+";musictheory::scales\n")
 
         # bebop melodic minor scale
         bebopMMinorList = minorList[:6]+[naturalSixth,naturalSeventh]
@@ -669,24 +700,164 @@ for key in keys:
         for i in range(8):
             bebopMMinorString += bebopMMinorList[i] + " "
         bebopMMinorString = bebopMMinorString[:-1]
-        bebopMMinorImage = GetImage(key,bebopMMinorList)
-        scaleNoteCards.write("the notes in the "+key+" bebop melodic minor scale are {{c1::"+bebopMMinorString+"}}"+bebopMMinorImage+"\n")
-
+        bebopMMinorImage = GetImage(key,bebopMMinorList,[])
+        theoryCardsImg.write("the notes in the "+key+" bebop melodic minor scale are {{c1::"+bebopMMinorString+"}}"+bebopMMinorImage+";musictheory::scales\n")
+        
         # melodic minor modes
-        melodicMinorModes = {"2nd":second+" dorian♭2","3rd":third+" lydian augmented","4th":fourth+" lydian dominant","5th":fifth+" mixolydian♭6","6th":naturalSixth+" locrian ♯2","7th":naturalSeventh+" altered"}
-        for mode in melodicMinorModes:
-            modeCards.write("{{c1::"+melodicMinorModes[mode]+"}} is the {{c2::"+mode+"}} mode of {{c3::"+key+" melodic minor}}\n")
+        melodicMinorModes = [second+" dorian♭2",third+" lydian augmented",fourth+" lydian dominant",fifth+" aeolian dominant",naturalSixth+" half diminished",naturalSeventh+" altered"]
+        melodicMinorModeImages = [dorianFlatTwoImage,lydianAugmentedImage,lydianDominantImage,aeolianDominantImage,halfDiminishedImage,alteredImage]
+        for i in range(6):
+            mode = modeDegrees[i]
+            melodicMinorMode = melodicMinorModes[i]
+            melodicMinorModeImage = melodicMinorModeImages[i]
+            theoryCardsImg.write("{{c1::"+melodicMinorMode+"}} is the "+mode+" mode of {{c2::"+key+" melodic minor}}"+melodicMinorModeImage+";musictheory::modes\n")
 
         # harmonic minor modes
-        harmonicMinorModes = {"2nd":second+" locrian♮6","3rd":third+" augmented major","4th":fourth+" dorian♯4","5th":fifth+" phrygian dominant","6th":sixth+" lydian♯2","7th":naturalSeventh+" super-locrian"}
-        for mode in harmonicMinorModes:
-            modeCards.write("{{c1::"+harmonicMinorModes[mode]+"}} is the {{c2::"+mode+"}} mode of {{c3::"+key+" harmonic minor}}\n")
-            
+        harmonicMinorModes = [second+" locrian♮6",third+" augmented major",fourth+" dorian♯4",fifth+" phrygian dominant",sixth+" lydian♯2",naturalSeventh+" super-locrian"]
+        harmonicMinorModeImages = [locrianNaturalSixImage,augmentedMajorImage,dorianSharpFourImage,phrygianDominantImage,lydianSharpTwoImage,superLocrianImage]
+        for i in range(6):
+            mord = modeDegrees[i]
+            harmonicMinorMode = harmonicMinorModes[i]
+            harmonicMinorModeImage = harmonicMinorModeImages[i]
+            theoryCardsImg.write("{{c1::"+harmonicMinorMode+"}} is the "+mode+" mode of {{c2::"+key+" harmonic minor}}"+harmonicMinorModeImage+";musictheory::modes\n")
+
+        # minor scale degree cards
+        minorDegrees = {"♭2nd":flatSecond,"2nd":second,"3rd":third,"4th":fourth,"♯4th":sharpFourth,"♭5th":flatFifth,"5th":fifth,"♯5th":sharpFifth,"♭9th":flatSecond,"9th":second,"11th":fourth,"♯11th":sharpFourth}
+        for degree in minorDegrees:
+            degreeImage = GetImage(key,minorList,[minorDegrees[degree]])
+            theoryCardsImg.write("{{c1::"+minorDegrees[degree]+"}} is the "+degree+" of {{c2::"+key+"}} minor"+degreeImage+";musictheory::scaledegrees\n")
+        # minor scale degrees 2nd cloze
+        minorDegrees1 = {"♭2nd/♭9th":flatSecond,"2nd/9th":second,"3rd":third,"4th/11th":fourth,"♯4th/♯11th":sharpFourth,"♭5th":flatFifth,"5th":fifth,"♯5th":sharpFifth}
+        for degree in minorDegrees1:
+            degreeImage = GetImage(key,minorList,[minorDegrees1[degree]])
+            theoryCardsImg.write(minorDegrees1[degree]+" is the {{c1::"+degree+"}} of "+key+" minor"+degreeImage+";musictheory::scaledegrees\n")
+        # natural minor scale degree cards
+        minorDegrees = {"6th":sixth,"7th":seventh,"13th":sixth}
+        for degree in minorDegrees:
+            degreeImage = GetImage(key,minorList,[minorDegrees[degree]])
+            theoryCardsImg.write("{{c1::"+minorDegrees[degree]+"}} is the "+degree+" of {{c2::"+key+"}} natural minor"+degreeImage+";musictheory::scaledegrees\n")
+        # natural minor scale degrees 2nd cloze
+        minorDegrees1 = {"6th/13th":sixth,"7th":seventh}
+        for degree in minorDegrees1:
+            degreeImage = GetImage(key,minorList,[minorDegrees1[degree]])
+            theoryCardsImg.write(minorDegrees1[degree]+" is the {{c1::"+degree+"}} of "+key+" natural minor"+degreeImage+";musictheory::scaledegrees\n")
+        # harmonic minor scale degree cards
+        minorDegrees = {"6th":sixth,"7th":sharpSeventh,"13th":sixth}
+        for degree in minorDegrees:
+            degreeImage = GetImage(key,hMinorList,[minorDegrees[degree]])
+            theoryCardsImg.write("{{c1::"+minorDegrees[degree]+"}} is the "+degree+" of {{c2::"+key+"}} harmonic minor"+degreeImage+";musictheory::scaledegrees\n")
+        # harmonic minor scale degrees 2nd cloze
+        minorDegrees1 = {"6th/13th":sixth,"7th":sharpSeventh}
+        for degree in minorDegrees1:
+            degreeImage = GetImage(key,hMinorList,[minorDegrees1[degree]])
+            theoryCardsImg.write(minorDegrees1[degree]+" is the {{c1::"+degree+"}} of "+key+" harmonic minor"+degreeImage+";musictheory::scaledegrees\n")
+        # melodic minor scale degree cards
+        minorDegrees = {"6th":sharpSixth,"7th":sharpSeventh,"13th":sharpSixth}
+        for degree in minorDegrees:
+            degreeImage = GetImage(key,hMinorList,[minorDegrees[degree]])
+            theoryCardsImg.write("{{c1::"+minorDegrees[degree]+"}} is the "+degree+" of {{c2::"+key+"}} melodic minor"+degreeImage+";musictheory::scaledegrees\n")
+        # melodic minor scale degrees 2nd cloze
+        minorDegrees1 = {"6th/13th":sharpSixth,"7th":sharpSeventh}
+        for degree in minorDegrees1:
+            degreeImage = GetImage(key,hMinorList,[minorDegrees1[degree]])
+            theoryCardsImg.write(minorDegrees1[degree]+" is the {{c1::"+degree+"}} of "+key+" melodic minor"+degreeImage+";musictheory::scaledegrees\n")
+
+        # natural minor triads functional harmony
+        nMinorDegrees = ["i","ii","III","iv","v","VI","VII"]
+        nMinorFunctionalChords = ["-","o","","-","-","",""]
+        for i in range(len(nMinorDegrees)):
+            degree = nMinorDegrees[i]
+            chord = nMinorFunctionalChords[i]
+            chordList = []
+            for j in range(0,6,2):
+                n = i+j
+                if n >= 7:
+                    n -= 7
+                chordList = chordList + [minorList[n]]
+            note = minorList[i]
+            chordImage = GetImage(key,minorList+minorList,chordList)
+            theoryCardsImg.write("{{c1::"+note+chord+"}} is the {{c2::"+degree+"}} triad of {{c3::"+key+"}} natural minor"+chordImage+";musictheory::functionalharmony\n")
+        # natural minor 7th chord functional harmony
+        nMinorDegrees = ["i","ii","III","iv","v","VI","VII"]
+        nMinorFunctionalChords = ["-7","-7♭5","Δ7","-7","-7","Δ7","7"]
+        for i in range(len(nMinorDegrees)):
+            degree = nMinorDegrees[i]
+            chord = nMinorFunctionalChords[i]
+            chordList = []
+            for j in range(0,8,2):
+                n = i+j
+                if n >= 7:
+                    n -= 7
+                chordList = chordList + [minorList[n]]
+            note = minorList[i]
+            chordImage = GetImage(key,minorList+minorList,chordList)
+            theoryCardsImg.write("{{c1::"+note+chord+"}} is the {{c2::"+degree+"}} 7th chord of {{c3::"+key+"}} natural minor"+chordImage+";musictheory::functionalharmony\n")
+        # harmonic minor triad functional harmony
+        hMinorDegrees = ["i","ii","III","iv","V","VI","vii"]
+        hMinorFunctionalChords = ["-","o","+","-","","","o"]
+        for i in range(len(hMinorDegrees)):
+            degree = hMinorDegrees[i]
+            chord = hMinorFunctionalChords[i]
+            chordList = []
+            for j in range(0,6,2):
+                n = i+j
+                if n >= 7:
+                    n -= 7
+                chordList = chordList + [hMinorList[n]]
+            note = hMinorList[i]
+            chordImage = GetImage(key,hMinorList+hMinorList,chordList)
+            theoryCardsImg.write("{{c1::"+note+chord+"}} is the {{c2::"+degree+"}} triad of {{c3::"+key+"}} harmonic minor"+chordImage+";musictheory::functionalharmony\n")
+        # harmonic minor 7th chord functional harmony
+        hMinorDegrees = ["i","ii","III","iv","V","VI","vii"]
+        hMinorFunctionalChords = ["-Δ7","-7♭5","Δ7♯5","-7","7","Δ7","o7"]
+        for i in range(len(hMinorDegrees)):
+            degree = hMinorDegrees[i]
+            chord = hMinorFunctionalChords[i]
+            chordList = []
+            for j in range(0,8,2):
+                n = i+j
+                if n >= 7:
+                    n -= 7
+                chordList = chordList + [hMinorList[n]]
+            note = hMinorList[i]
+            chordImage = GetImage(key,hMinorList+hMinorList,chordList)
+            theoryCardsImg.write("{{c1::"+note+chord+"}} is the {{c2::"+degree+"}} 7th chord of {{c3::"+key+"}} harmonic minor"+chordImage+";musictheory::functionalharmony\n")
+        # melodic minor triad functional harmony
+        mMinorDegrees = ["i","ii","III","IV","V","vi","vii"]
+        mMinorFunctionalChords = ["-","-","+","","","o","o"]
+        for i in range(len(mMinorDegrees)):
+            degree = mMinorDegrees[i]
+            chord = mMinorFunctionalChords[i]
+            chordList = []
+            for j in range(0,6,2):
+                n = i+j
+                if n >= 7:
+                    n -= 7
+                chordList = chordList + [mMinorList[n]]
+            note = mMinorList[i]
+            chordImage = GetImage(key,mMinorList+mMinorList,chordList)
+            theoryCardsImg.write("{{c1::"+note+chord+"}} is the {{c2::"+degree+"}} triad of {{c3::"+key+"}} melodic minor"+chordImage+";musictheory::functionalharmony\n")
+        # melodic minor 7th chord functional harmony
+        mMinorDegrees = ["i","ii","III","IV","V","vi","vii"]
+        mMinorFunctionalChords = ["-Δ7","-7","Δ7♯5","7","7","-7♭5","-7♭5"]
+        for i in range(len(mMinorDegrees)):
+            degree = mMinorDegrees[i]
+            chord = mMinorFunctionalChords[i]
+            chordList = []
+            for j in range(0,8,2):
+                n = i+j
+                if n >= 7:
+                    n -= 7
+                chordList = chordList + [mMinorList[n]]
+            note = mMinorList[i]
+            chordImage = GetImage(key,mMinorList+mMinorList,chordList)
+            theoryCardsImg.write("{{c1::"+note+chord+"}} is the {{c2::"+degree+"}} 7th chord of {{c3::"+key+"}} melodic minor"+chordImage+";musictheory::functionalharmony\n")
+
         # minor guide tones cards
-        minorMajor7AGuideTonesImage = GetImage(key,[third,naturalSeventh])
-        minorMajor7BGuideTonesImage = GetImage(key,[naturalSeventh,third])
-        voicingCards.write("the guide tones of "+key+"-Δ7 in inversion A are {{c1::"+third+" and "+naturalSeventh+"}} (in order from lowest to highest)"+minorMajor7AGuideTonesImage+"\n")
-        voicingCards.write("the guide tones of "+key+"-Δ7 in inversion B are {{c1::"+naturalSeventh+" and "+third+"}} (in order from lowest to highest)"+minorMajor7BGuideTonesImage+"\n")
+        minorMajor7AGuideTonesImage = GetImage(key,[third,naturalSeventh],[])
+        minorMajor7BGuideTonesImage = GetImage(key,[naturalSeventh,third],[])
+        theoryCardsImg.write("the guide tones of "+key+"-Δ7 in inversion A are {{c1::"+third+" and "+naturalSeventh+"}} (in order from lowest to highest)"+minorMajor7AGuideTonesImage+";musictheory::voicings\n")
+        theoryCardsImg.write("the guide tones of "+key+"-Δ7 in inversion B are {{c1::"+naturalSeventh+" and "+third+"}} (in order from lowest to highest)"+minorMajor7BGuideTonesImage+";musictheory::voicings\n")
 
         # 3 note minor chord voicings cards
         # minor
@@ -703,8 +874,8 @@ for key in keys:
                 minorChordString += minorChordNotes[note]+" "
                 minorChordList += [minorChordNotes[note]]
             minorChordString = minorChordString[:-1]
-            minorChordImage = GetImage(key,minorChordList)
-            voicingCards.write("the notes in a "+key+"- chord in "+inversion+" are {{c2::"+minorChordString+"}} (in order from lowest to highest)"+minorChordImage+"\n")
+            minorChordImage = GetImage(key,minorChordList,[])
+            theoryCardsImg.write("the notes in a "+key+"- chord in "+inversion+" are {{c2::"+minorChordString+"}} (in order from lowest to highest)"+minorChordImage+";musictheory::voicings\n")
 
         # 4 note minor chord voicing cards
         # minor7b5 minor-major7
@@ -726,10 +897,10 @@ for key in keys:
                 minorMajor7List += [minorMajor7ChordNotes[note]]
             minor7FlatFiveString = minor7FlatFiveString[:-1]
             minorMajor7String = minorMajor7String[:-1]
-            minor7FlatFiveImage = GetImage(key,minor7FlatFiveList)
-            minorMajor7Image = GetImage(key,minorMajor7List)
-            voicingCards.write("the notes in a "+key+"-7♭5 chord in "+inversion+" are {{c1::"+minor7FlatFiveString+"}} (in order from lowest to highest)"+minor7FlatFiveImage+"\n")
-            voicingCards.write("the notes in a "+key+"-Δ7 chord in "+inversion+" are {{c1::"+minorMajor7String+"}} (in order from lowest to highest)"+minorMajor7Image+"\n")
+            minor7FlatFiveImage = GetImage(key,minor7FlatFiveList,[])
+            minorMajor7Image = GetImage(key,minorMajor7List,[])
+            theoryCardsImg.write("the notes in a "+key+"-7♭5 chord in "+inversion+" are {{c1::"+minor7FlatFiveString+"}} (in order from lowest to highest)"+minor7FlatFiveImage+";musictheory::voicings\n")
+            theoryCardsImg.write("the notes in a "+key+"-Δ7 chord in "+inversion+" are {{c1::"+minorMajor7String+"}} (in order from lowest to highest)"+minorMajor7Image+";musictheory::voicings\n")
 
         # rootless minor chord voicing cards
         # minor7b5b9 dominant7b9b13 minor-major9
@@ -762,12 +933,12 @@ for key in keys:
             minorRootlessiiString = minorRootlessiiString[:-1]
             minorRootlessVString = minorRootlessVString[:-1]
             minorRootlessIString = minorRootlessIString[:-1]
-            minorRootlessiiImage = GetImage(key,minorRootlessiiList)
-            minorRootlessVImage = GetImage(key,minorRootlessVList)
-            minorRootlessIImage = GetImage(key,minorRootlessIList)
-            voicingCards.write("the notes in a type "+rootlessInversion+" rootless "+key+"-7♭9♭5 chord are {{c2::"+minorRootlessiiString+"}} (in order from lowest to highest)"+minorRootlessiiImage+"\n")
-            voicingCards.write("the notes in a type "+rootlessInversion+" rootless "+key+"7♭9♭13 chord are {{c2::"+minorRootlessVString+"}} (in order from lowest to highest)"+minorRootlessVImage+"\n")
-            voicingCards.write("the notes in a type "+rootlessInversion+" rootless "+key+"-Δ9 chord are {{c2::"+minorRootlessIString+"}} (in order from lowest to highest)"+minorRootlessIImage+"\n")
+            minorRootlessiiImage = GetImage(key,minorRootlessiiList,[])
+            minorRootlessVImage = GetImage(key,minorRootlessVList,[])
+            minorRootlessIImage = GetImage(key,minorRootlessIList,[])
+            theoryCardsImg.write("the notes in a type "+rootlessInversion+" rootless "+key+"-7♭9♭5 chord are {{c2::"+minorRootlessiiString+"}} (in order from lowest to highest)"+minorRootlessiiImage+";musictheory::voicings\n")
+            theoryCardsImg.write("the notes in a type "+rootlessInversion+" rootless "+key+"7♭9♭13 chord are {{c2::"+minorRootlessVString+"}} (in order from lowest to highest)"+minorRootlessVImage+";musictheory::voicings\n")
+            theoryCardsImg.write("the notes in a type "+rootlessInversion+" rootless "+key+"-Δ9 chord are {{c2::"+minorRootlessIString+"}} (in order from lowest to highest)"+minorRootlessIImage+";musictheory::voicings\n")
 
         # extended minor chord voicing cards
         # minor6 minor6/9 minor9b13
@@ -777,8 +948,8 @@ for key in keys:
         for i in range(4):
             minor6String += minor6List[i]+" "
         minor6String = minor6String[:-1]
-        minor6Image = GetImage(key,minor6List)
-        voicingCards.write("the notes in a "+key+"-6 chord are {{c1::"+minor6String+"}} (in order from lowest to highest)"+minor6Image+"\n")
+        minor6Image = GetImage(key,minor6List,[])
+        theoryCardsImg.write("the notes in a "+key+"-6 chord are {{c1::"+minor6String+"}} (in order from lowest to highest)"+minor6Image+";musictheory::voicings\n")
 
     intervals = {"minor 2nd":1,"major 2nd":2,"minor 3rd":3,"major 3rd":4,"perfect 4th":5,"tritone":6,"perfect 5th":7,"minor 6th":8,"major 6th":9,"minor 7th":10,"major 7th":11,"minor 9th":13,"major 9th":14,"minor 10th":15,"major 10th":16,"perfect 11th":17,"perfect 12th":19,"minor 13th":20,"major 13th":21,"minor 14th":22,"major 14th":23,"perfect 15th":24,"diminished 2nd":0,"augmented 1st":1,"diminishd 3rd":2,"augmented 2nd":3,"diminished 4th":4,"augmented 3rd":5,"diminished 5th":6,"augmented 4th":6,"diminished 6th":7,"augmented 5th":8,"diminished 7th":9,"augmented 6th":10,"diminished 8th":11,"augmented 7th":12,"diminished 9th":12,"augmented 8th":13,"diminished 10th":14,"augmented 9th":15,"diminished 11th":16,"augmented 10th":17,"diminished 12th":18,"augmented 11th":18,"diminished 13th":19,"augmented 12th":20,"diminished 14th":21,"augmented 13th":22,"diminished 15th":23,"augmented 14th":24,"augmented 15th":25}
     for interval in intervals:
@@ -793,15 +964,20 @@ for key in keys:
         else:
             noteAbove = intervalAbove
         intNotesList = [key,noteAbove]
-        intervalImage = GetImage(key,intNotesList)
-        intervalCards.write("{{c1::"+intervalAbove+"}} is a "+interval+" above {{c2::"+key+"}}"+intervalImage+"\n")
-        intervalCards.write("{{c1::"+key+"}} is a "+interval+" below {{c2::"+intervalAbove+"}}"+intervalImage+"\n")
+        intervalImage = GetImage(key,intNotesList,[])
+        theoryCardsImg.write("{{c1::"+intervalAbove+"}} is a "+interval+" above {{c2::"+key+"}}"+intervalImage+";musictheory::intervals\n")
+        theoryCardsImg.write("{{c1::"+key+"}} is a "+interval+" below {{c2::"+intervalAbove+"}}"+intervalImage+";musictheory::intervals\n")
 
     slashChords = {"[♭II]/[I]":"[♭II]Δ or [I]sus♭9♭13","[II]/[I]":"[I]Δ♯4","[♭III]/[I]":"[I]-7","[III]/[I]":"[I]Δ♯5","[IV]/[I]":"[IV]","[♭V]/[I]":"[I]7♭9","[V]/[I]":"[I]Δ","[♭VI]/[I]":"[♭VI]","[VI]/[I]":"[I]7♭9","[♭VII]/[I]":"[I]sus","[VII]/[I]":"[I]Δ♯4♯9"}
     for slashChord in slashChords:
         slashChordName = slashChord
         eqChordName = slashChords[slashChord]
         slashChordDegrees = re.findall("\[(.+?)\]",slashChord)
+        triadI = slashChordDegrees[0]
+        triadINote = getDegree(key, triadI)
+        triadIIINote = getDegree(triadINote,"III")
+        triadVNote = getDegree(triadINote,"V")
+        triadList = [triadINote,triadIIINote,triadVNote]
         for slashChordDegree in slashChordDegrees:
             slashChordDegreeNote = getDegree(key, slashChordDegree)
             slashChordName = re.sub("^(.*?)\[.+?\]","\g<1>"+slashChordDegreeNote,slashChordName)
@@ -809,7 +985,8 @@ for key in keys:
         for eqChordDegree in eqChordDegrees:
             eqChordDegreeNote = getDegree(key, eqChordDegree)
             eqChordName = re.sub("^(.*?)\[.+?\]","\g<1>"+eqChordDegreeNote,eqChordName)
-        slashChordCards.write("{{c1::"+slashChordName+"::slash chord}} is equivalent to {{c2::"+eqChordName+"::chord name}} in traditional notation\n")
+        slashChordImage = GetImage(triadINote,[key,"8va"]+triadList,[])
+        theoryCardsImg.write("{{c1::"+slashChordName+"::slash chord}} is equivalent to {{c2::"+eqChordName+"::chord name}} in traditional notation"+slashChordImage+";musictheory::slashchords\n")
 
     if not majorKeyNum == -1:
         second = majorList[1]
@@ -837,28 +1014,25 @@ for key in keys:
         flatSeventh = minorList[6]
         seventh = AlterNote("sharp",minorList[6])
 
-    pentatonicList = [key,second,third,fifth,sixth]
+    # minor pentatonic scales
     minorPentatonicList = [key,flatThird,fourth,fifth,flatSeventh]
-    pentatonicString = ""
     minorPentatonicString = ""
     for i in range(5):
-        pentatonicString += pentatonicList[i]+" "
         minorPentatonicString += minorPentatonicList[i]+" "
-    pentatonicString = pentatonicString[:-1]
     minorPentatonicString = minorPentatonicString[:-1]
-    pentatonicImage = GetImage(key,pentatonicList)
-    minorPentatonicImage = GetImage(key,minorPentatonicList)
-    scaleNoteCards.write("the notes in the "+key+" pentatonic scale are {{c1::"+pentatonicString+"}}"+pentatonicImage+"\n")
-    scaleNoteCards.write("the notes in the "+key+" minor pentatonic scale are {{c1::"+minorPentatonicString+"}}"+minorPentatonicImage+"\n")
+    minorPentatonicImage = GetImage(key,minorPentatonicList,[])
+    theoryCardsImg.write("the notes in the "+key+" minor pentatonic scale are {{c1::"+minorPentatonicString+"}}"+minorPentatonicImage+";musictheory::scales\n")
 
+    # blues scale
     bluesList = [key,flatThird,fourth,sharpFourth,fifth,flatSeventh]
     bluesString = ""
     for i in range(6):
         bluesString += bluesList[i]+" "
-    bluesImage = GetImage(key,bluesList)
+    bluesImage = GetImage(key,bluesList,[])
     bluesString = bluesString[:-1]
-    scaleNoteCards.write("the notes in the "+key+" blues scale are {{c1::"+bluesString+"}}"+bluesImage+"\n")
+    theoryCardsImg.write("the notes in the "+key+" blues scale are {{c1::"+bluesString+"}}"+bluesImage+";musictheory::scales\n")
 
+    # diminished scales
     HWDiminishedList = [key, flatSecond, sharpSecond, third, sharpFourth, fifth, sixth, flatSeventh]
     WHDiminishedList = [key,second,flatThird,fourth,flatFifth,flatSixth,diminishedSeventh,seventh]
     HWDiminishedString = ""
@@ -868,20 +1042,20 @@ for key in keys:
         WHDiminishedString += WHDiminishedList[i]+" "
     HWDiminishedString = HWDiminishedString[:-1]
     WHDiminishedString = WHDiminishedString[:-1]
-    HWDiminishedImage = GetImage(key,HWDiminishedList)
-    WHDiminishedImage = GetImage(key,WHDiminishedList)
-    scaleNoteCards.write("the notes in the "+key+" half-whole diminished scale are {{c1::"+HWDiminishedString+"}}"+HWDiminishedImage+"\n")
-    scaleNoteCards.write("the notes in the "+key+" half-whole diminished scale are {{c1::"+WHDiminishedString+"}}"+WHDiminishedImage+"\n")
+    HWDiminishedImage = GetImage(key,HWDiminishedList,[])
+    WHDiminishedImage = GetImage(key,WHDiminishedList,[])
+    theoryCardsImg.write("the notes in the "+key+" half-whole diminished scale are {{c1::"+HWDiminishedString+"}}"+HWDiminishedImage+";musictheory::scales\n")
+    theoryCardsImg.write("the notes in the "+key+" half-whole diminished scale are {{c1::"+WHDiminishedString+"}}"+WHDiminishedImage+";musictheory::scales\n")
 
     # dominant7 diminished7 guide tones cards
-    dominant7AGuideTones = GetImage(key,[third,flatSeventh])
-    dominant7BGuideTones = GetImage(key,[flatSeventh,third])
-    diminished7AGuideTones = GetImage(key,[flatThird,diminishedSeventh])
-    diminished7BGuideTones = GetImage(key,[diminishedSeventh,flatThird])
-    voicingCards.write("the guide tones of "+key+"7 in inversion A are {{c1::"+third+" and "+flatSeventh+"}}"+dominant7AGuideTones+" (in order from lowest to highest)\n")
-    voicingCards.write("the guide tones of "+key+"7 in inversion B are {{c1::"+flatSeventh+" and "+third+"}}"+dominant7BGuideTones+" (in order from lowest to highest)\n")
-    voicingCards.write("the guide tones of "+key+"o7 in inversion A are {{c1::"+flatThird+" and "+diminishedSeventh+"}}"+diminished7AGuideTones+" (in order from lowest to highest)\n")
-    voicingCards.write("the guide tones of "+key+"o7 in inversion B are {{c1::"+diminishedSeventh+" and "+flatThird+"}}"+diminished7BGuideTones+" (in order from lowest to highest)\n")
+    dominant7AGuideTones = GetImage(key,[third,flatSeventh],[])
+    dominant7BGuideTones = GetImage(key,[flatSeventh,third],[])
+    diminished7AGuideTones = GetImage(key,[flatThird,diminishedSeventh],[])
+    diminished7BGuideTones = GetImage(key,[diminishedSeventh,flatThird],[])
+    theoryCardsImg.write("the guide tones of "+key+"7 in inversion A are {{c1::"+third+" and "+flatSeventh+"}} (in order from lowest to highest)"+dominant7AGuideTones+";musictheory::voicings\n")
+    theoryCardsImg.write("the guide tones of "+key+"7 in inversion B are {{c1::"+flatSeventh+" and "+third+"}} (in order from lowest to highest)"+dominant7BGuideTones+";musictheory::voicings\n")
+    theoryCardsImg.write("the guide tones of "+key+"o7 in inversion A are {{c1::"+flatThird+" and "+diminishedSeventh+"}} (in order from lowest to highest)"+diminished7AGuideTones+";musictheory::voicings\n")
+    theoryCardsImg.write("the guide tones of "+key+"o7 in inversion B are {{c1::"+diminishedSeventh+" and "+flatThird+"}} (in order from lowest to highest)"+diminished7BGuideTones+";musictheory::voicings\n")
 
     # 3 note diminished chord voicings cards
     # diminished inversions
@@ -898,8 +1072,8 @@ for key in keys:
             diminishedString += diminishedNotes[note]+" "
             diminishedList += [diminishedNotes[note]]
         diminishedString = diminishedString[:-1]
-        diminishedImage = GetImage(key,diminishedList)
-        voicingCards.write("the notes in a "+key+"o chord in "+inversion+" are {{c2::"+diminishedString+"}} (in order from lowest to highest)"+diminishedImage+"\n")
+        diminishedImage = GetImage(key,diminishedList,[])
+        theoryCardsImg.write("the notes in a "+key+"o chord in "+inversion+" are {{c2::"+diminishedString+"}} (in order from lowest to highest)"+diminishedImage+";musictheory::voicings\n")
 
     # 4 note chord voicing cards
     # dominant7 diminished7 inversions
@@ -921,10 +1095,10 @@ for key in keys:
             diminished7List += [diminished7Notes[note]]
         dominsnt7String = dominant7String[:-1]
         diminished7String = diminished7String[:-1]
-        dominant7Image = GetImage(key,dominant7List)
-        diminished7Image = GetImage(key,diminished7List)
-        voicingCards.write("the notes in a "+key+"7 chord in "+inversion+" are {{c2::"+dominant7String+"}} (in order from lowest to highest)"+dominant7Image+"\n")
-        voicingCards.write("the notes in a "+key+"o7 chord in "+inversion+" are {{c2::"+diminished7String+"}} (in order from lowest to highest)"+diminished7Image+"\n")
+        dominant7Image = GetImage(key,dominant7List,[])
+        diminished7Image = GetImage(key,diminished7List,[])
+        theoryCardsImg.write("the notes in a "+key+"7 chord in "+inversion+" are {{c2::"+dominant7String+"}} (in order from lowest to highest)"+dominant7Image+";musictheory::voicings\n")
+        theoryCardsImg.write("the notes in a "+key+"o7 chord in "+inversion+" are {{c2::"+diminished7String+"}} (in order from lowest to highest)"+diminished7Image+";musictheory::voicings\n")
 
     # other chord voicing cards
     sus2List = [key,second,fifth]
@@ -936,10 +1110,10 @@ for key in keys:
         sus4String += sus4List[i]+" "
     sus2String = sus2String[:-1]
     sus4String = sus4String[:-1]
-    sus2Image = GetImage(key,sus2List)
-    sus4Image = GetImage(key,sus4List)
-    voicingCards.write("the notes in a "+key+"sus2 chord are {{c1::"+sus2String+"}} (in order from lowest to highest)"+sus2Image+"\n")
-    voicingCards.write("the notes in a "+key+"sus4 chord are {{c1::"+sus4String+"}} (in order from lowest to highest)"+sus4Image+"\n")
+    sus2Image = GetImage(key,sus2List,[])
+    sus4Image = GetImage(key,sus4List,[])
+    theoryCardsImg.write("the notes in a "+key+"sus2 chord are {{c1::"+sus2String+"}} (in order from lowest to highest)"+sus2Image+";musictheory::voicings\n")
+    theoryCardsImg.write("the notes in a "+key+"sus4 chord are {{c1::"+sus4String+"}} (in order from lowest to highest)"+sus4Image+";musictheory::voicings\n")
 
     sevenSus2List = [key,second,fifth,flatSeventh]
     sevenSus4List = [key,fourth,fifth,flatSeventh]
@@ -950,34 +1124,34 @@ for key in keys:
         sevenSus4String += sevenSus4List[i]+" "
     sevenSus2String = sevenSus2String[:-1]
     sevenSus4String = sevenSus4String[:-1]
-    sevenSus2Image = GetImage(key,sevenSus2List)
-    sevenSus4Image = GetImage(key,sevenSus4List)
-    voicingCards.write("the notes in a "+key+"7sus2 chord are {{c1::"+sevenSus2String+"}} (in order from lowest to highest)"+sevenSus2Image+"\n")
-    voicingCards.write("the notes in a "+key+"7sus4 chord are {{c1::"+sevenSus4String+"}} (in order from lowest to highest)"+sevenSus4Image+"\n")
+    sevenSus2Image = GetImage(key,sevenSus2List,[])
+    sevenSus4Image = GetImage(key,sevenSus4List,[])
+    theoryCardsImg.write("the notes in a "+key+"7sus2 chord are {{c1::"+sevenSus2String+"}} (in order from lowest to highest)"+sevenSus2Image+";musictheory::voicings\n")
+    theoryCardsImg.write("the notes in a "+key+"7sus4 chord are {{c1::"+sevenSus4String+"}} (in order from lowest to highest)"+sevenSus4Image+";musictheory::voicings\n")
 
     dominant9List = [key,third,fifth,flatSeventh,second]
     dominant9String = ""
     for i in range(5):
         dominant9String += dominant9List[i]+" "
     dominant9String = dominant9String[:-1]
-    dominant9Image = GetImage(key,dominant9List)
-    voicingCards.write("the notes in a "+key+"9 chord are {{c1::"+dominant9String+"}} (in order from lowest to highest)"+dominant9Image+"\n")
+    dominant9Image = GetImage(key,dominant9List,[])
+    theoryCardsImg.write("the notes in a "+key+"9 chord are {{c1::"+dominant9String+"}} (in order from lowest to highest)"+dominant9Image+";musictheory::voicings\n")
 
     dominantSharp11List = [key,third,fifth,flatSeventh,second,sharpFourth]
     dominantSharp11String = ""
     for i in range(6):
         dominantSharp11String += dominantSharp11List[i]+" "
     dominantSharp11String = dominantSharp11String[:-1]
-    dominantSharp11Image = GetImage(key,dominantSharp11List)
-    voicingCards.write("the notes in a "+key+"♯11 chord are {{c1::"+dominantSharp11String+"}} (in order from lowest to highest)"+dominantSharp11Image+"\n")
+    dominantSharp11Image = GetImage(key,dominantSharp11List,[])
+    theoryCardsImg.write("the notes in a "+key+"♯11 chord are {{c1::"+dominantSharp11String+"}} (in order from lowest to highest)"+dominantSharp11Image+";musictheory::voicings\n")
 
     dominant13Sharp11List = [key,third,fifth,flatSeventh,second,sharpFourth,sixth]
     dominant13Sharp11String = ""
     for i in range(7):
         dominant13Sharp11String += dominant13Sharp11List[i]+" "
     dominant13Sharp11String = dominant13Sharp11String[:-1]
-    dominant13Sharp11Image = GetImage(key,dominant13Sharp11List)
-    voicingCards.write("the notes in a "+key+"13♯11 chord are {{c1::"+dominant13Sharp11String+"}} (in order from lowest to highest)"+dominant13Sharp11Image+"\n")
+    dominant13Sharp11Image = GetImage(key,dominant13Sharp11List,[])
+    theoryCardsImg.write("the notes in a "+key+"13♯11 chord are {{c1::"+dominant13Sharp11String+"}} (in order from lowest to highest)"+dominant13Sharp11Image+";musictheory::voicings\n")
 
     chords = {"[I]": ["[I] major","[I] lydian"],
           "[I]-": ["[I] melodic minor","[I] bebop melodic minor","[IV] pentatonic","[III] in-sen"],
@@ -989,12 +1163,12 @@ for key in keys:
           "[V]7": ["[V] mixolydian","[V] bebop dominant","[V] pentatonic","[I] minor pentatonic","[II] minor pentatonic","[III] minor pentatonic""[V] minor pentatonic","[I] blues scale","[II] blues scale","[III] blues scale","[V] blues scale","[III] in-sen"],
           "[V]7sus": ["[V] mixolydian","[III] in-sen"],
           "[VI]-♭6": ["[VI] aeolian","[III] in-sen"],
-          "[VII]7ø": ["[VII] locrian","[VII] locrian ♯2","[V] pentatonic","[III] in-sen"],
+          "[VII]7ø": ["[VII] locrian","[VII] half diminished","[V] pentatonic","[III] in-sen"],
           # melodic minor modes
           "[I]7-Δ": ["[I] melodic minor","[I] bebop melodic minor","[IV] pentatonic","[II] in-sen"],
           "[III]Δ♯5": ["[III] lydian augmented","[IV] pentatonic","[II] in-sen"],
           "[IV]7♯11": ["[IV] lydian dominant","[IV] pentatonic","[II] in-sen"],
-          "[I]-Δ/[V]": ["[V] mixolydian♭6","[IV] pentatonic","[II] in-sen"],
+          "[I]-Δ/[V]": ["[V] aeolian dominant","[IV] pentatonic","[II] in-sen"],
           "[VII]alt": ["[VII] altered","[IV] pentatonic","[II] in-sen"],
           # symmetric scales
           "[V]7♭9": ["[V] half-whole diminished"],
@@ -1029,8 +1203,8 @@ for key in keys:
            scalesString += re.sub("\[.+?\]",scaleDegreeNote,scale)+", "
         scalesString = scalesString[:-2]
         scalesStringCloze = scalesStringCloze[:-2]
-        chordScaleCards.write("which scales can you play over a "+chordName+" chord?"+scalesStringCloze+"\n")
-        chordScaleCards.write("which scales can you play over a "+chordName+" chord?"+scalesString+"\n")
+        theoryCards.write("which scales can you play over a "+chordName+" chord?"+scalesStringCloze+";musictheory::chordscales\n")
+        theoryCards.write("which scales can you play over a "+chordName+" chord?"+scalesString+";musictheory::chordscales\n")
 
     scales = {# major modes
           "[I] major":["[I]Δ","[I]","[I]/[V]","[V]/[I]","[I]/[III]"],
@@ -1042,11 +1216,11 @@ for key in keys:
           "[VII] locrian":["[VII]ø","[I]/[VII]"],
           # melodic minor modes
           "[I] melodic minor":["[I]-Δ"],
-          "[II] dorian♭b":["[II]sus♭9"],
+          "[II] dorian♭2":["[II]sus♭9"],
           "[I] lydian augmented":["[I]Δ♯5","[III]/[I]"],
           "[IV] lydian dominant":["[IV]7♯11"],
-          "[V] mixolydian♭6":["[I]-Δ/[V]"],
-          "[VI] locrian ♯2":["[VI]ø"],
+          "[V] aeolian dominant":["[I]-Δ/[V]"],
+          "[VI] half diminished":["[VI]ø"],
           "[VII] altered":["[VII]alt","[IV]/[VII]"],
           # symmetric scales
           "[I] half-whole diminished":["[I]7♭9","[♭V]/[I]","[VI]/[I]"],
@@ -1081,5 +1255,5 @@ for key in keys:
             chordsString += chordName+", "
         chordsString = chordsString[:-2]
         chordsStringCloze = chordsStringCloze[:-2]
-        chordScaleCards.write("which chords can you play a "+scaleName+" over?"+chordsString+"\n")
-        chordScaleCards.write("which chords can you play a "+scaleName+" over?"+chordsStringCloze+"\n")
+        theoryCards.write("which chords can you play a "+scaleName+" over?"+chordsString+";musictheory::chordscales\n")
+        theoryCards.write("which chords can you play a "+scaleName+" over?"+chordsStringCloze+";musictheory::chordscales\n")

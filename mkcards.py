@@ -101,13 +101,11 @@ def IsDegreeEnharmonic(notes):
         noteAccidental = ""
         if note[0]=="♯" or note[0]=="♭" or note[0]=="Δ":
             noteAccidental = note[0]
-            noteNum = int(note[1:])
+            noteNum = int(note[1:])%7
         elif note[:3]=="sus":
-            noteNum = int(note[3:])
+            noteNum = int(note[3:])%7
         else:
-            noteNum = int(note)
-        if noteNum > 7:
-            noteNum -= 7
+            noteNum = int(note)%7
         noteNum *= 2
         if noteNum >= 8:
             noteNum -= 1
@@ -167,35 +165,7 @@ for interval in intervalsInvert:
             intervalType = "d"
         intervalSize = str(9-int(interval[1]))
     # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-    theoryCardsCloze.write("mt-inverted-intervals-"+interval+";Inverted Intervals;{{c1::"+interval+"}} ~ {{c2::"+intervalType+intervalSize+"}};;;musictheory::intervals\n")
-
-intervals = {"P1":0,"m2":1,"M2":2,"m3":3,"M3":4,"P4":5,"TT":6,"P5":7,"m6":8,"M6":9,"m7":10,"M7":11,"P8":12,"m9":13,"M9":14,"m10":15,"M10":16,"P11":17,"P12":19,"m13":20,"M13":21,"m14":22,"M14":23,"P15":24,"d2":0,"A1":1,"d3":2,"A2":3,"d4":4,"A3":5,"d5":6,"A4":6,"d6":7,"A5":8,"d7":9,"A6":10,"d8":11,"A7":12,"d9":12,"A8":13,"d10":14,"A9":15,"d11":16,"A10":17,"d12":18,"A11":18,"d13":19,"A12":20,"d14":21,"A13":22,"d15":23,"A14":24,"A15":25}
-for keyIndex in range(len(keysEnharmonicBlackKeys)):
-    for interval in intervals:
-        intervalNum = intervals[interval]
-        intervalAboveNum = keyIndex+intervalNum
-        while intervalAboveNum >= 12:
-            intervalAboveNum -= 12
-        keyEnharmonic = keysEnharmonicBlackKeys[keyIndex]
-        intervalEnharmonic = keysEnharmonicBlackKeys[intervalAboveNum]
-        if "/" in intervalEnharmonic:
-            intervalNote = intervalEnharmonic.split("/")[1]
-        else:
-            intervalNote = intervalEnharmonic
-        if "/" in keyEnharmonic:
-            keyNote = keyEnharmonic.split("/")[1]
-        else:
-            keyNote = keyEnharmonic
-        if intervalNum == 0:
-            intervalImage = GetImage(keyNote,[keyNote],[])
-        elif intervalNum < 13:
-            intervalImage = GetImage(keyNote,[keyNote,intervalNote],[])
-        else:
-            intervalImage = GetImage(keyNote,[keyNote,"8va",intervalNote],[])
-        # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-        if not (interval[0]=="d" or interval[0]=="A"):
-            theoryCardsBasic.write("mt-intervals-"+keyEnharmonic+"-"+interval+"-image;Intervals;"+interval+";"+intervalImage+";"+keyEnharmonic+" "+intervalEnharmonic+";;IT;musictheory::intervals\n")
-        theoryCardsCloze.write("mt-intervals-"+keyEnharmonic+"-"+interval+";Intervals;{{c1::"+keyEnharmonic+"}} ~ "+interval+" ~ {{c2::"+intervalEnharmonic+"}};"+intervalImage+";;musictheory::intervals\n")
+    theoryCardsCloze.write("mt-inverted-intervals-"+interval+";Inverted Intervals;<span id=\"cloze1\">{{c1::"+interval+"}}</span><span id=\"cloze2\">{{c2::"+intervalType+intervalSize+"}}</span>;;;musictheory::intervals\n")
 
 # modes
 majorModeNames = ["ionian","dorian","phrygian","lydian","mixolydian","aeolian","locrian"]
@@ -225,9 +195,7 @@ for modeName in range(len(modeNameLists)):
             theoryCardsCloze.write("mt-modes-"+modeNameLists[modeName][mode]+";Modes;{{c1::"+modeNameLists[modeName][mode]+"}} is the {{c2::"+NumberWithSuffix(mode+1)+"}} mode of {{c3::"+modeTypeNames[modeName]+"}};;;musictheory::modes\n")
             # mode functional harmony cards
             for modeDegree in range(modeDegrees):
-                scaleDegree = mode+modeDegree
-                if scaleDegree >= 7:
-                    scaleDegree -= 7
+                scaleDegree = (mode+modeDegree)%7
                 modeTriad = modeFunctionalTriads[modeName][scaleDegree]
                 mode7th = modeFunctional7ths[modeName][scaleDegree]
                 if modeTriad =="-" or modeTriad =="o":
@@ -288,9 +256,7 @@ for x in range(len(keys)):
         majorList += [note]
     minorList = []
     for i in range(5,12):
-        if i >= 7:
-            i -= 7
-        minorList += [majorList[i]]
+        minorList += [majorList[i%7]]
     harmonicMajorList = majorList[:5]+[AlterNote("flat",majorList[5])]+[majorList[6]]
     melodicMinorList = minorList[:5]+[AlterNote("sharp",minorList[5]),AlterNote("sharp",minorList[6])]
     harmonicMinorList = minorList[:6]+[AlterNote("sharp",minorList[6])]
@@ -320,7 +286,7 @@ for x in range(len(keys)):
 
     # relative keys cards
     # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-    theoryCardsCloze.write("mt-relative-minor-"+majorList[0]+";Relative Keys;{{c1::"+majorList[0]+"}} major ~ {{c2::"+minorList[0]+"}} minor;;;musictheory::relativekeys\n")
+    theoryCardsCloze.write("mt-relative-minor-"+majorList[0]+";Relative Keys;<span id=\"cloze1\">{{c1::"+majorList[0]+"}} major</span><span id=\"cloze2\">{{c2::"+minorList[0]+"}} minor</span>;;;musictheory::relativekeys\n")
 
     # scale mode cards
     modeTypeLists = [majorList,harmonicMajorList,melodicMinorList,harmonicMinorList,pentatonicList]
@@ -330,9 +296,7 @@ for x in range(len(keys)):
             modeString = ""
             modeDegrees = len(modeTypeLists[modeType])
             for modeDegree in range(modeDegrees+1):
-                modeNote = mode+modeDegree
-                if modeNote >= len(modeTypeLists[modeType]):
-                    modeNote -= len(modeTypeLists[modeType])
+                modeNote = (mode+modeDegree)%len(modeTypeLists[modeType])
                 modeList += [modeTypeLists[modeType][modeNote]]
                 modeString += modeTypeLists[modeType][modeNote]+" "
             # scale mode notes cards
@@ -341,7 +305,6 @@ for x in range(len(keys)):
                 theoryCardsBasic.write("mt-scalenotes-image"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes;"+modeList[0]+" "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],modeList,[])+";"+modeString[:-1]+";;IT;musictheory::scales\n")
             theoryCardsBasic.write("mt-scalenotes-ascending-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes ASCENDING;"+modeList[0]+" "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],modeList,[])+";"+modeString[:-1]+";TI;;musictheory::scales\n")
             theoryCardsBasic.write("mt-scalenotes-descending-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes DESCENDING;"+modeList[0]+" "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],modeList,[])+";"+modeString[:-1]+";TI;;musictheory::scales\n")
-
             #TODO have a whole 88 key piano image on the front and the scale name and ask what degree it is? Maybe not, too many cards (88 notes * 12 keys * 4 scales * 7 modes)
             # mode degrees cards
             for modeDegree in range(1,modeDegrees):
@@ -372,6 +335,48 @@ for x in range(len(keys)):
             theoryCardsBasic.write("mt-scalenotes-image-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";"+GetImage(scaleLists[scale][0],scaleLists[scale],[])+";"+scaleString[:-1]+";;IT;musictheory::scales\n")
         theoryCardsBasic.write("mt-scalenotes-ascending-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes ASCENDING;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";"+GetImage(scaleLists[scale][0],scaleLists[scale],[])+";"+scaleString[:-1]+";TI;;musictheory::scales\n")
         theoryCardsBasic.write("mt-scalenotes-descending-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes DESCENDING;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";"+GetImage(scaleLists[scale][0],scaleLists[scale],[])+";"+scaleString[:-1]+";TI;;musictheory::scales\n")
+
+    # intervals
+    # TODO TODO
+    intervalNamesPerfect = ["d","P","A"]
+    intervalNamesMajor = ["d","m","M","A"]
+    intervalModifiersPerfect = [-1,0,1]
+    intervalModifiersMajor = [-2,-1,0,1]
+    for interval in range(1,16):
+        if interval==1 or interval==4 or interval==5 or interval==8 or interval==11 or interval==12 or interval==15:
+            intervalNames = intervalNamesPerfect
+            intervalModifiers = intervalModifiersPerfect
+        else:
+            intervalNames = intervalNamesMajor
+            intervalModifiers = intervalModifiersMajor
+        for i in range(len(intervalNames)):
+            if intervalModifiers[i] == -2:
+                intervalNote = AlterNote("flat",AlterNote("flat",majorList[(interval-1)%7]))
+            elif intervalModifiers[i] == -1:
+                intervalNote = AlterNote("flat",majorList[(interval-1)%7])
+            elif intervalModifiers[i] == 0:
+                intervalNote = majorList[(interval-1)%7]
+            elif intervalModifiers[i] == 1:
+                intervalNote = AlterNote("sharp",majorList[(interval-1)%7])
+
+            if (interval==1 and intervalNames[i]=="P") or (interval==2 and intervalNames[i]=="d"):
+                intervalImageList = [majorList[0]]
+            elif interval*2+intervalModifiers[i] > 30:
+                intervalImageList = [majorList[0],"8va","8va",intervalNote]
+            elif interval*2+intervalModifiers[i] > 16:
+                intervalImageList = [majorList[0],"8va",intervalNote]
+            else:
+                intervalImageList = [majorList[0],intervalNote]
+            intervalImage = GetImage(majorList[0],intervalImageList,[])
+
+            if not (intervalNames[i]=="d" and interval==1):
+                if not (intervalNames[i] == "d" or intervalNames[i] == "A"):
+                    theoryCardsBasic.write("mt-intervals-"+majorList[0]+"-"+intervalNames[i]+str(interval)+"-image;Intervals;"+intervalNames[i]+str(interval)+";"+intervalImage+";"+majorList[0]+" "+intervalNote+";;IT;musictheory::intervals\n")
+                theoryCardsCloze.write("mt-intervals-"+majorList[0]+"-"+intervalNames[i]+str(interval)+";Intervals;{{c1::"+majorList[0]+"}} ~ "+intervalNames[i]+str(interval)+" ~ {{c2::"+intervalNote+"}};"+intervalImage+";;musictheory::intervals\n")
+
+    theoryCardsBasic.write("mt-intervals-"+majorList[0]+"-TT-image;Intervals;TT;"+GetImage(majorList[0],[majorList[0],AlterNote("sharp",majorList[3])],[])+";"+majorList[0]+" "+AlterNote("sharp",majorList[3])+";;IT;musictheory::intervals\n")
+    theoryCardsCloze.write("mt-intervals-"+majorList[0]+"-TT;Intervals;{{c1::"+majorList[0]+"}} ~ TT ~ {{c2::"+AlterNote("sharp",majorList[3])+"}};"+GetImage(majorList[0],[majorList[0],AlterNote("sharp",majorList[3])],[])+";;musictheory::intervals\n")
+
 
     # major scale degrees
     for i in range(1,7):
@@ -448,9 +453,7 @@ for x in range(len(keys)):
             chordList = []
             chordString = ""
             for degree in range(len(chordNoteLists[chord])):
-                note = inversion+degree
-                if note >= len(chordNoteLists[chord]):
-                    note -= len(chordNoteLists[chord])
+                note = (inversion+degree)%len(chordNoteLists[chord])
                 chordList += [chordNoteLists[chord][note]]
                 chordString += chordNoteLists[chord][note]+" "
             # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]

@@ -1,17 +1,21 @@
-#Basic Cards Format: [ID];[Title];[Text];[Image];[Extra];[Text to Image];[Image to Text];[Tags]
-#Cloze Cards Format: [ID];[Title];[Text];[Image];[Extra];[Tags]
-#TODO randomize the order of the relative keys
-#TODO make the key signature cards an image of a key signature on a staff
-#TODO add natural minor/aeolian cloze and major/ionian cloze? do it like the 6th/13th cards and the M6/M10 cards
+#Basic Cards Format: [ID];[Title];[Text];[Front Image];[Back Image];[Extra];[Text to Image];[Image to Text];[Tags]
+#Cloze Cards Format: [ID];[Title];[Text];[Front Image];[Back Image];[Extra];[Tags]
+
+# TODO should I add descending guide tones?
+# high priority:
+
+# medium priority:
 #TODO finish extended chords cards? needed?
 #TODO make cards for the scale degrees in slash chords and polychords? needed probably, would be nice?
 #TODO write black keys that don't matter as enharmonic? (e.g. bebop scales?)
+
+# lower priority:
 #TODO add chord substitution cards ala Jazz Theory Book
 #TODO add more chord voicing cards (e.g. quartal voicings, rootless voicings, etc.)
 #TODO make sure cards agree with https://newjazz.dk/Compendiums/scales_of_harmonies.pdf
 #TODO also make sure they agree with https://www.newjazz.dk/Compendiums/Systematic_Scale_Chart.pdf
 #TODO add cards for the chords mentioned in the jazz theory book and how they relate to their respective scales?
-# card format [ID];[title];[front text];[front image];[back image];[back text];[tags]
+
 count = 0
 theoryCardsCloze = open("theoryCardsCloze.txt","w")
 theoryCardsBasic = open("theoryCardsBasic.txt","w")
@@ -33,54 +37,56 @@ def AlterNote(alteration, note):
 
 notes = ["C","D","E","F","G","A","B"]
 def GetImageString(key):
-    if key[1:]=="♭":
-        if key[0]=="C":
-            return "B"
-        elif key[0]=="F":
-            return "E"
-        else:
-            return (key[0]+"b")
-    elif key[1:]=="♯":
-        if key[0] == "B":
-            return "C"
-        elif key[0] == "E":
-            return "F"
-        else:
-            return notes[notes.index(key[0])+1]+"b"
-    elif key[1:]=="♭♭":
-        if key[0] == "C":
-            return "Bb"
-        elif key[0] == "F":
-            return "Eb"
-        else:
-            return notes[notes.index(key[0])-1]
-    elif key[1:]=="♯♯":
-        if key[0] == "B":
-            return "Db"
-        elif key[0] == "E":
-            return "Gb"
-        else:
-            return notes[notes.index(key[0])+1]
-    else:
-        return key
+    if key != None:
+        if key=="random" or key=="8va":
+            return key
+        keyString = key[0]
+        for character in key:
+            if character == "♭":
+                if keyString=="C" or keyString=="F" or len(keyString)==2:
+                    if keyString == "C":
+                        keyString = notes[len(notes)-1]
+                    else:
+                        keyString = notes[notes.index(keyString[0])-1]
+                else:
+                    keyString += "b"
+            elif character == "♯":
+                if keyString=="B" or keyString=="E":
+                    keyString = notes[(notes.index(keyString[0])+1)%len(notes)]
+                elif len(keyString) == 2:
+                    keyString = keyString[0]
+                else:
+                    keyString = notes[notes.index(keyString[0])+1]+"b"
+    return keyString
 
-def GetImage(key,blueList,orangeList):
+def GetImage(key,blueList,orangeList,noneList):
     keyString = GetImageString(key)
     imageStr = "<canvas id=\"keyboard\" style=\"border:1px solid black\" data-tonic=\""+keyString+"\" data-highlight1=\""
     blueStr = ""
     orangeStr = ""
+    noneStr = ""
+
     for key in blueList:
         blueStr += GetImageString(key)
         blueStr += ","
     if not blueStr == "":
         blueStr = blueStr[:-1]
+
     imageStr += (blueStr+"\" data-highlight2=\"")
     for key in orangeList:
         orangeStr += GetImageString(key)
         orangeStr += ","
     if not orangeStr == "":
         orangeStr = orangeStr[:-1]
-    imageStr += (orangeStr+"\"></canvas>")
+
+    imageStr += (orangeStr+"\" data-highlight3=\"")
+    for key in noneList:
+        noneStr += GetImageString(key)
+        noneStr += ","
+    if not noneStr == "":
+        noneStr = noneStr [:-1]
+    imageStr += (noneStr+"\"></canvas>")
+
     return imageStr
 
 def NumberWithSuffix(num):
@@ -164,68 +170,59 @@ for interval in intervalsInvert:
         elif interval[0] == "A":
             intervalType = "d"
         intervalSize = str(9-int(interval[1]))
-    # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-    theoryCardsCloze.write("mt-inverted-intervals-"+interval+";Inverted Intervals;<span id=\"cloze1\">{{c1::"+interval+"}}</span><span id=\"cloze2\">{{c2::"+intervalType+intervalSize+"}}</span>;;;musictheory::intervals\n")
+    theoryCardsCloze.write("mt-inverted-intervals-"+interval+";Inverted Intervals;<span id=\"cloze1\">{{c1::"+interval+"}}</span><span id=\"cloze2\">{{c2::"+intervalType+intervalSize+"}}</span>;;;;musictheory::intervals\n")
 
 # modes
 majorModeNames = ["ionian","dorian","phrygian","lydian","mixolydian","aeolian","locrian"]
 harmonicMajorModeNames = ["harmonic major","dorian♭5","phrygian♭4","lydian♭3","mixolydian♭2","lydian-augmented♯2","locrian♭♭7"]
 melodicMinorModeNames = ["melodic minor","dorian♭2","lydian-augmented","lydian-dominant","aeolian-dominant","half-diminished","altered"]
-harmonicMinorModeNames = ["harmonic minor","locrian♯6","augmented-major","dorian♯4","phrygian-dominant","lydian♯2","super-locrian"]
+harmonicMinorModeNames = ["harmonic minor","locrian♯6","major-augmented","dorian♯4","phrygian-dominant","lydian♯2","super-locrian"]
 pentatonicModeNames = ["major pentatonic","pentatonic mode 2","pentatonic mode 3","pentatonic mode 4","minor pentatonic"]
 modeNameLists = [majorModeNames,harmonicMajorModeNames,melodicMinorModeNames,harmonicMinorModeNames,pentatonicModeNames]
 modeTypeNames = ["major","harmonic major","melodic minor","harmonic minor","pentatonic"]
-functionalTriadsMajor = ["","-","-","","","-","o"]
-functionalTriadsHarmonicMajor = ["","o","-","-","","+","o"]
-functionalTriadsMelodicMinor = ["-","-","+","","","o","o"]
-functionalTriadsHarmonicMinor = ["-","o","+","-","+","+","o"]
+functionalTriadsMajor = ["","-","-","","","-","°"]
+functionalTriadsHarmonicMajor = ["","°","-","-","","+","°"]
+functionalTriadsMelodicMinor = ["-","-","+","","","°","°"]
+functionalTriadsHarmonicMinor = ["-","°","+","-","+","+","°"]
 functionalTriadsNaturalMinor = functionalTriadsMajor[5:]+functionalTriadsMajor[:5]
 functional7thsMajor = ["Δ7","-7","-7","Δ7","7","-7","ø7"]
-functional7thsHarmonicMajor = ["Δ7","ø7","-7","-Δ7","7","+Δ7","o7"]
+functional7thsHarmonicMajor = ["Δ7","ø7","-7","-Δ7","7","+Δ7","°7"]
 functional7thsMelodicMinor = ["-Δ7","-7","+Δ7","7","7","ø7","ø7"]
-functional7thsHarmonicMinor = ["-Δ7","ø7","+Δ7","-7","7","Δ7","o7"]
+functional7thsHarmonicMinor = ["-Δ7","ø7","+Δ7","-7","7","Δ7","°7"]
 functional7thsNaturalMinor = functional7thsMajor[5:]+functional7thsMajor[:5]
 modeFunctionalTriads = [functionalTriadsMajor,functionalTriadsHarmonicMajor,functionalTriadsMelodicMinor,functionalTriadsHarmonicMinor]
 modeFunctional7ths = [functional7thsMajor,functional7thsHarmonicMajor,functional7thsMelodicMinor,functional7thsHarmonicMinor]
 for modeName in range(len(modeNameLists)):
     for mode in range(len(modeNameLists[modeName])):
         modeDegrees = len(modeNameLists[modeName])
-        # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
         if not "pentatonic" in modeNameLists[modeName][mode]:
-            theoryCardsCloze.write("mt-modes-"+modeNameLists[modeName][mode]+";Modes;{{c1::"+modeNameLists[modeName][mode]+"}} is the {{c2::"+NumberWithSuffix(mode+1)+"}} mode of {{c3::"+modeTypeNames[modeName]+"}};;;musictheory::modes\n")
+            theoryCardsCloze.write("mt-modes-"+modeNameLists[modeName][mode]+";Modes;{{c1::"+modeNameLists[modeName][mode]+"}} is the {{c2::"+NumberWithSuffix(mode+1)+"}} mode of {{c3::"+modeTypeNames[modeName]+"}};;;;musictheory::modes\n")
             # mode functional harmony cards
             for modeDegree in range(modeDegrees):
                 scaleDegree = (mode+modeDegree)%7
                 modeTriad = modeFunctionalTriads[modeName][scaleDegree]
                 mode7th = modeFunctional7ths[modeName][scaleDegree]
-                if modeTriad =="-" or modeTriad =="o":
+                if modeTriad =="-" or modeTriad =="°":
                     chordFunction = degrees[modeDegree].lower()
                 else:
                     chordFunction = degrees[modeDegree]
-                # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-                theoryCardsCloze.write("mt-functional-triads-"+chordFunction+"-"+modeNameLists[modeName][mode]+";Functional Harmony;{{c1::"+modeTriad+"}} is the {{c2::"+chordFunction+"}} triad of "+modeNameLists[modeName][mode]+";;;musictheory::functionalharmony\n")
-                theoryCardsCloze.write("mt-functional-7ths-"+chordFunction+"-"+modeNameLists[modeName][mode]+";Functional Harmony;{{c1::"+mode7th+"}} is the {{c2::"+chordFunction+"}} 7th chord of "+modeNameLists[modeName][mode]+";;;musictheory::functionalharmony\n")
+                theoryCardsCloze.write("mt-functional-triads-"+chordFunction+"-"+modeNameLists[modeName][mode]+";Functional Harmony;{{c1::"+chordFunction+modeTriad+"}} is the "+chordFunction.upper()+" triad of "+modeNameLists[modeName][mode]+";;;;musictheory::functionalharmony\n")
+                theoryCardsCloze.write("mt-functional-7ths-"+chordFunction+"-"+modeNameLists[modeName][mode]+";Functional Harmony;{{c1::"+chordFunction+mode7th+"}} is the "+chordFunction.upper()+" 7th chord of "+modeNameLists[modeName][mode]+";;;;musictheory::functionalharmony\n")
 
 # major and minor functional triads and sevenths
 for scaleDegree in range(7):
-# major functional triads and sevenths
-    majorTriad = functionalTriadsMajor[scaleDegree]
-    majorSeventh = functional7thsMajor[scaleDegree]
-    minorTriad = functionalTriadsNaturalMinor[scaleDegree]
-    minorSeventh = functional7thsNaturalMinor[scaleDegree]
-    if majorTriad=="-" or majorTriad=="o":
+    functionalTriad = functionalTriadsMajor[scaleDegree]
+    functional7th = functional7thsMajor[scaleDegree]
+    if functionalTriad=="-" or functionalTriad=="°":
         chordFunctionMajor = degrees[scaleDegree].lower()
+        chordFunctionMinor = degrees[(scaleDegree+2)%7].lower()
     else:
         chordFunctionMajor = degrees[scaleDegree]
-    if minorTriad=="-" or minorTriad=="o":
-        chordFunctionMinor = degrees[scaleDegree].lower()
-    else:
-        chordFunctionMinor = degrees[scaleDegree]
-    # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-    theoryCardsCloze.write("mt-functional-triads-"+chordFunctionMajor+"-major;Functional Harmony;{{c1::"+majorTriad+"}} is the {{c2::"+chordFunctionMajor+"}} triad of major;;;musictheory::functionalharmony\n")
-    theoryCardsCloze.write("mt-functional-7ths-"+chordFunctionMajor+"-major;Functional Harmony;{{c1::"+majorSeventh+"}} is the {{c2::"+chordFunctionMajor+"}} 7th chord of major;;;musictheory::functionalharmony\n")
-    theoryCardsCloze.write("mt-functional-triads-"+chordFunctionMinor+"-minor;Functional Harmony;{{c1::"+majorTriad+"}} is the {{c2::"+chordFunctionMinor+"}} triad of minor;;;musictheory::functionalharmony\n")
-    theoryCardsCloze.write("mt-functional-7ths-"+chordFunctionMinor+"-minor;Functional Harmony;{{c1::"+majorSeventh+"}} is the {{c2::"+chordFunctionMinor+"}} 7th chord of minor;;;musictheory::functionalharmony\n")
+        chordFunctionMinor = degrees[(scaleDegree+2)%7]
+    theoryCardsCloze.write("mt-functional-triads-"+chordFunctionMajor+"-major;Functional Harmony;{{c1::"+chordFunctionMajor+functionalTriad+"}} is the "+chordFunctionMajor.upper()+" triad of major;;;;musictheory::functionalharmony\n")
+    theoryCardsCloze.write("mt-functional-7ths-"+chordFunctionMajor+"-major;Functional Harmony;{{c1::"+chordFunctionMajor+functional7th+"}} is the "+chordFunctionMajor.upper()+" 7th chord of major;;;;musictheory::functionalharmony\n")
+    theoryCardsCloze.write("mt-functional-triads-"+chordFunctionMinor+"-minor;Functional Harmony;{{c1::"+chordFunctionMinor+functionalTriad+"}} is the "+chordFunctionMinor.upper()+" triad of minor;;;;musictheory::functionalharmony\n")
+    theoryCardsCloze.write("mt-functional-7ths-"+chordFunctionMinor+"-minor;Functional Harmony;{{c1::"+chordFunctionMinor+functional7th+"}} is the "+chordFunctionMinor.upper()+" 7th chord of minor;;;;musictheory::functionalharmony\n")
 
 
 keys = ["C","F","B♭","E♭","A♭","D♭","F♯","G♭","B","E","A","D","G"]
@@ -279,14 +276,13 @@ for x in range(len(keys)):
         keySignatureString += key+" "
     if keySignature == []:
         keySignatureString = "no sharps or flats "
-    theoryCardsBasic.write("mt-key-signatures-key-major-"+majorList[0]+";Major Key Signatures;"+majorList[0]+" major;"+GetImage(majorList[0],majorList+[majorList[0]],keySignatureMajorOrdered)+";<img src=\""+majorList[0]+"major.png\">;TI;;musictheory::keysignatures\n")
-    theoryCardsBasic.write("mt-key-signatures-signature-major-"+majorList[0]+";Major Key Signatures;<img src=\""+majorList[0]+"major.png\">;"+GetImage(majorList[0],majorList+[majorList[0]],keySignatureMajorOrdered)+";"+majorList[0]+" major;TI;;musictheory::keysignatures\n")
-    theoryCardsBasic.write("mt-key-signatures-key-minor-"+minorList[0]+";Minor Key Signatures;"+minorList[0]+" minor;"+GetImage(minorList[0],minorList+[minorList[0]],keySignatureMinorOrdered)+";<img src=\""+majorList[0]+"major.png\">;TI;;musictheory::keysignatures\n")
-    theoryCardsBasic.write("mt-key-signatures-signature-minor-"+minorList[0]+";Minor Key Signatures;<img src=\""+majorList[0]+"major.png\">;"+GetImage(minorList[0],minorList+[minorList[0]],keySignatureMinorOrdered)+";"+minorList[0]+" minor;TI;;musictheory::keysignatures\n")
+    theoryCardsBasic.write("mt-key-signatures-key-major-"+majorList[0]+";Major Key Signatures;"+majorList[0]+" major;"+GetImage(majorList[0],[],[],majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+[majorList[0]],keySignatureMajorOrdered,[])+";<img src=\""+majorList[0]+"major.png\">;TI;;musictheory::keysignatures\n")
+    theoryCardsBasic.write("mt-key-signatures-signature-major-"+majorList[0]+";Major Key Signatures;<img src=\""+majorList[0]+"major.png\">;"+GetImage(majorList[0],[],[],majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+[majorList[0]],keySignatureMajorOrdered,[])+";"+majorList[0]+" major;TI;;musictheory::keysignatures\n")
+    theoryCardsBasic.write("mt-key-signatures-key-minor-"+minorList[0]+";Minor Key Signatures;"+minorList[0]+" minor;"+GetImage(minorList[0],[],[],minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+[minorList[0]],keySignatureMinorOrdered,[])+";<img src=\""+majorList[0]+"major.png\">;TI;;musictheory::keysignatures\n")
+    theoryCardsBasic.write("mt-key-signatures-signature-minor-"+minorList[0]+";Minor Key Signatures;<img src=\""+majorList[0]+"major.png\">;"+GetImage(minorList[0],[],[],minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+[minorList[0]],keySignatureMinorOrdered,[])+";"+minorList[0]+" minor;TI;;musictheory::keysignatures\n")
 
     # relative keys cards
-    # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-    theoryCardsCloze.write("mt-relative-minor-"+majorList[0]+";Relative Keys;<span id=\"cloze1\">{{c1::"+majorList[0]+"}} major</span><span id=\"cloze2\">{{c2::"+minorList[0]+"}} minor</span>;;;musictheory::relativekeys\n")
+    theoryCardsCloze.write("mt-relative-minor-"+majorList[0]+";Relative Keys;<span id=\"cloze1\">{{c1::"+majorList[0]+"}} major</span><span id=\"cloze2\">{{c2::"+minorList[0]+"}} minor</span>;;;;musictheory::relativekeys\n")
 
     # scale mode cards
     modeTypeLists = [majorList,harmonicMajorList,melodicMinorList,harmonicMinorList,pentatonicList]
@@ -300,18 +296,18 @@ for x in range(len(keys)):
                 modeList += [modeTypeLists[modeType][modeNote]]
                 modeString += modeTypeLists[modeType][modeNote]+" "
             # scale mode notes cards
-            # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-            if not majorList[0] == "F♯":
-                theoryCardsBasic.write("mt-scalenotes-image"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes;"+modeList[0]+" "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],modeList,[])+";"+modeString[:-1]+";;IT;musictheory::scales\n")
-            theoryCardsBasic.write("mt-scalenotes-ascending-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes ASCENDING;"+modeList[0]+" "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],modeList,[])+";"+modeString[:-1]+";TI;;musictheory::scales\n")
-            theoryCardsBasic.write("mt-scalenotes-descending-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes DESCENDING;"+modeList[0]+" "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],modeList,[])+";"+modeString[:-1]+";TI;;musictheory::scales\n")
-            #TODO have a whole 88 key piano image on the front and the scale name and ask what degree it is? Maybe not, too many cards (88 notes * 12 keys * 4 scales * 7 modes)
-            # mode degrees cards
-            for modeDegree in range(1,modeDegrees):
-                # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
+            if not (majorList[0] == "F♯" or modeNameLists[modeType][mode]=="ionian" or modeNameLists[modeType][mode]=="aeolian"):
+                theoryCardsBasic.write("mt-scalenotes-image"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes;"+modeList[0]+" "+modeNameLists[modeType][mode]+";;"+GetImage("random",modeList,[],modeList+["random"])+";"+modeString[:-1]+";;IT;musictheory::scales\n")
+            theoryCardsBasic.write("mt-scalenotes-ascending-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes <span style=\"color:hotpink\">ASCENDING</span>;"+modeList[0]+" "+modeNameLists[modeType][mode]+";"+GetImage("random",[],[],modeList+["random"])+";"+GetImage("random",modeList,[],modeList+["random"])+";"+modeString[:-1]+";TI;;musictheory::scales\n")
+            theoryCardsBasic.write("mt-scalenotes-descending-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Notes <span style=\"color:indigo\">DESCENDING</span>;"+modeList[0]+" "+modeNameLists[modeType][mode]+";"+GetImage("random",[],[],modeList+["random"])+";"+GetImage("random",modeList,[],modeList+["random"])+";"+modeString[:-1]+";TI;;musictheory::scales\n")
+
+            # mode scale degree cards
+            for modeDegree in range(modeDegrees):
                 if modeDegree==1 or modeDegree==3 or modeDegree==5:
-                    theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(modeDegree+8)+"-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Degrees;{{c1::"+modeList[modeDegree]+"}} is the "+NumberWithSuffix(modeDegree+8)+" of {{c3::"+modeList[0]+"}} "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],modeList[:-1]+modeList,["8va",modeList[modeDegree]])+";;musictheory::scaledegrees\n")
-                theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(modeDegree+1)+"-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Degrees;{{c1::"+modeList[modeDegree]+"}} is the {{c2::"+NumberWithSuffix(modeDegree+1)+"}} of {{c3::"+modeList[0]+"}} "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],modeList,[modeList[modeDegree]])+";;musictheory::scaledegrees\n")
+                    theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(modeDegree+8)+"-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Degrees;{{c1::"+modeList[modeDegree]+"}} is the "+NumberWithSuffix(modeDegree+8)+" of {{c3::"+modeList[0]+"}} "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],[],[],modeList+modeList[1:])+";"+GetImage(modeList[0],modeList+modeList[1:],["8va",modeList[modeDegree]],[])+";;musictheory::scaledegrees\n")
+                theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(modeDegree+1)+"-"+modeList[0]+"-"+modeNameLists[modeType][mode]+";Scale Degrees;{{c1::"+modeList[modeDegree]+"}} is the "+NumberWithSuffix(modeDegree+1)+" of {{c2::"+modeList[0]+"}} "+modeNameLists[modeType][mode]+";"+GetImage(modeList[0],[],[],modeList)+";"+GetImage(modeList[0],modeList,[modeList[modeDegree]],[])+";;musictheory::scaledegrees\n")
+
+                theoryCardsBasic.write("mt-scaledegrees-"+NumberWithSuffix(modeDegree+1)+"-"+modeList[0]+"-"+modeNameLists[modeType][mode]+"-image;Scale Degrees "+modeList[0]+" "+modeNameLists[modeType][mode]+";"+NumberWithSuffix(modeDegree+1)+";;"+GetImage("random",[],["8va",modeList[modeDegree],"8va","random"],[])+";"+modeList[modeDegree]+" is the "+NumberWithSuffix(modeDegree+1)+" of "+modeList[0]+" "+modeNameLists[modeType][mode]+";;IT;musictheory::scaledegrees\n")
 
     # other scale note cards
     insenList = [majorList[0],AlterNote("flat",majorList[1])]+majorList[3:5]+[AlterNote("flat",majorList[6]),majorList[0]]
@@ -330,14 +326,12 @@ for x in range(len(keys)):
         scaleString = ""
         for note in range(len(scaleLists[scale])):
             scaleString += scaleLists[scale][note]+" "
-        # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
         if not majorList[0] == "F♯":
-            theoryCardsBasic.write("mt-scalenotes-image-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";"+GetImage(scaleLists[scale][0],scaleLists[scale],[])+";"+scaleString[:-1]+";;IT;musictheory::scales\n")
-        theoryCardsBasic.write("mt-scalenotes-ascending-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes ASCENDING;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";"+GetImage(scaleLists[scale][0],scaleLists[scale],[])+";"+scaleString[:-1]+";TI;;musictheory::scales\n")
-        theoryCardsBasic.write("mt-scalenotes-descending-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes DESCENDING;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";"+GetImage(scaleLists[scale][0],scaleLists[scale],[])+";"+scaleString[:-1]+";TI;;musictheory::scales\n")
+            theoryCardsBasic.write("mt-scalenotes-image-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";;"+GetImage("random",scaleLists[scale],[],scaleLists[scale]+["random"])+";"+scaleString[:-1]+";;IT;musictheory::scales\n")
+        theoryCardsBasic.write("mt-scalenotes-ascending-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes <span style=\"color:hotpink\">ASCENDING</span>;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";"+GetImage("random",[],[],scaleLists[scale]+["random"])+";"+GetImage("random",scaleLists[scale],[],scaleLists[scale]+["random"])+";"+scaleString[:-1]+";TI;;musictheory::scales\n")
+        theoryCardsBasic.write("mt-scalenotes-descending-"+scaleLists[scale][0]+"-"+scaleNameLists[scale]+";Scale Notes <span style=\"color:indigo\">DESCENDING</span>;"+scaleLists[scale][0]+" "+scaleNameLists[scale]+";"+GetImage("random",[],[],scaleLists[scale]+["random"])+";"+GetImage("random",scaleLists[scale],[],scaleLists[scale]+["random"])+";"+scaleString[:-1]+";TI;;musictheory::scales\n")
 
     # intervals
-    # TODO TODO
     intervalNamesPerfect = ["d","P","A"]
     intervalNamesMajor = ["d","m","M","A"]
     intervalModifiersPerfect = [-1,0,1]
@@ -367,68 +361,70 @@ for x in range(len(keys)):
                 intervalImageList = [majorList[0],"8va",intervalNote]
             else:
                 intervalImageList = [majorList[0],intervalNote]
-            intervalImage = GetImage(majorList[0],intervalImageList,[])
 
             if not (intervalNames[i]=="d" and interval==1):
                 if not (intervalNames[i] == "d" or intervalNames[i] == "A"):
-                    theoryCardsBasic.write("mt-intervals-"+majorList[0]+"-"+intervalNames[i]+str(interval)+"-image;Intervals;"+intervalNames[i]+str(interval)+";"+intervalImage+";"+majorList[0]+" "+intervalNote+";;IT;musictheory::intervals\n")
-                theoryCardsCloze.write("mt-intervals-"+majorList[0]+"-"+intervalNames[i]+str(interval)+";Intervals;{{c1::"+majorList[0]+"}} ~ "+intervalNames[i]+str(interval)+" ~ {{c2::"+intervalNote+"}};"+intervalImage+";;musictheory::intervals\n")
+                    theoryCardsBasic.write("mt-intervals-"+majorList[0]+"-"+intervalNames[i]+str(interval)+"-image;Intervals;"+intervalNames[i]+str(interval)+";;"+GetImage("random",intervalImageList,[],intervalImageList+["random"])+";"+majorList[0]+" ~ "+intervalNames[i]+str(interval)+" ~ "+intervalNote+";;IT;musictheory::intervals\n")
+                theoryCardsCloze.write("mt-intervals-"+majorList[0]+"-"+intervalNames[i]+str(interval)+";Intervals;{{c1::"+majorList[0]+"}} ~ "+intervalNames[i]+str(interval)+" ~ {{c2::"+intervalNote+"}};"+GetImage("random",[],[],intervalImageList+["random"])+";"+GetImage("random",intervalImageList,[],intervalImageList+["random"])+";;musictheory::intervals\n")
 
-    theoryCardsBasic.write("mt-intervals-"+majorList[0]+"-TT-image;Intervals;TT;"+GetImage(majorList[0],[majorList[0],AlterNote("sharp",majorList[3])],[])+";"+majorList[0]+" "+AlterNote("sharp",majorList[3])+";;IT;musictheory::intervals\n")
-    theoryCardsCloze.write("mt-intervals-"+majorList[0]+"-TT;Intervals;{{c1::"+majorList[0]+"}} ~ TT ~ {{c2::"+AlterNote("sharp",majorList[3])+"}};"+GetImage(majorList[0],[majorList[0],AlterNote("sharp",majorList[3])],[])+";;musictheory::intervals\n")
+    theoryCardsBasic.write("mt-intervals-"+majorList[0]+"-TT-image;Intervals;TT;;"+GetImage("random",[majorList[0],AlterNote("sharp",majorList[3])],[],[majorList[0],AlterNote("sharp",majorList[3]),"random"])+";"+majorList[0]+" ~ TT ~ "+AlterNote("sharp",majorList[3])+";;IT;musictheory::intervals\n")
+    theoryCardsCloze.write("mt-intervals-"+majorList[0]+"-TT;Intervals;{{c1::"+majorList[0]+"}} ~ TT ~ {{c2::"+AlterNote("sharp",majorList[3])+"}};"+GetImage("random",[],[],[majorList[0],AlterNote("sharp",majorList[3]),"random"])+";"+GetImage("random",[majorList[0],AlterNote("sharp",majorList[3])],[],[majorList[0],AlterNote("sharp",majorList[3]),"random"])+";;musictheory::intervals\n")
 
 
     # major scale degrees
-    for i in range(1,7):
+    for i in range(7):
         sharpNote = AlterNote("sharp",majorList[i])
         flatNote = AlterNote("flat",majorList[i])
-        # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-        theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+majorList[i]+"}} is the {{c2::"+NumberWithSuffix(i+1)+"}} of {{c3::"+majorList[0]+"}} major;"+GetImage(majorList[0],majorList+[majorList[0]],[majorList[i]])+";;musictheory::scaledegrees\n")
+        theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+majorList[i]+"}} is the "+NumberWithSuffix(i+1)+" of {{c2::"+majorList[0]+"}} major;"+GetImage(majorList[0],[],[],majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+[majorList[0]],[majorList[i]],[])+";;musictheory::scaledegrees\n")
+        theoryCardsBasic.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major-image;Scale Degrees "+majorList[0]+" major;"+NumberWithSuffix(i+1)+";;"+GetImage("random",[],["8va",majorList[i],"8va","random"],[])+";"+majorList[i]+" is the "+NumberWithSuffix(i+1)+" of "+majorList[0]+" major;;IT;musictheory::scaledegrees\n")
         if i==1 or i==3 or i==5:
-            theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+8)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+majorList[i]+"}} is the "+NumberWithSuffix(i+8)+" of {{c3::"+majorList[0]+"}} major;"+GetImage(majorList[0],majorList+majorList+[majorList[0]],["8va",majorList[i]])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+8)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+majorList[i]+"}} is the "+NumberWithSuffix(i+8)+" of {{c2::"+majorList[0]+"}} major;"+GetImage(majorList[0],[],[],majorList+majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+majorList+[majorList[0]],["8va",majorList[i]],[])+";;musictheory::scaledegrees\n")
         if i==1 or i==3:
-            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+8)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+sharpNote+"}} is the {{c2::♯"+NumberWithSuffix(i+8)+"}} of {{c3::"+majorList[0]+"}} major;"+GetImage(majorList[0],majorList+majorList+[majorList[0]],["8va",sharpNote])+";;musictheory::scaledegrees\n")
-            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+sharpNote+"}} is the ♯"+NumberWithSuffix(i+1)+" of {{c3::"+majorList[0]+"}} major;"+GetImage(majorList[0],majorList+[majorList[0]],[sharpNote])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-#"+NumberWithSuffix(i+8)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+sharpNote+"}} is the ♯"+NumberWithSuffix(i+8)+" of {{c2::"+majorList[0]+"}} major;"+GetImage(majorList[0],[],[],majorList+majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+majorList+[majorList[0]],["8va",sharpNote],[])+";;musictheory::scaledegrees\n")
+            theoryCardsBasic.write("mt-scaledegrees-#"+NumberWithSuffix(i+8)+"-"+majorList[0]+"-major-image;Scale Degrees "+majorList[0]+" major;♯"+NumberWithSuffix(i+8)+";;"+GetImage("random",[],["8va",sharpNote,"8va","random"],[])+";"+sharpNote+" is the #"+NumberWithSuffix(i+8)+" of "+majorList[0]+" major;;IT;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-#"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+sharpNote+"}} is the ♯"+NumberWithSuffix(i+1)+" of {{c2::"+majorList[0]+"}} major;"+GetImage(majorList[0],[],[],majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+[majorList[0]],[sharpNote],[])+";;musictheory::scaledegrees\n")
         if i==1 or i==5:
-            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+8)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+flatNote+"}} is the {{c2::♭"+NumberWithSuffix(i+8)+"}} of {{c3::"+majorList[0]+"}} major;"+GetImage(majorList[0],majorList+majorList+[majorList[0]],["8va",flatNote])+";;musictheory::scaledegrees\n")
-            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+flatNote+"}} is the ♭"+NumberWithSuffix(i+1)+" of {{c3::"+majorList[0]+"}} major;"+GetImage(majorList[0],majorList+[majorList[0]],[flatNote])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-b"+NumberWithSuffix(i+8)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+flatNote+"}} is the ♭"+NumberWithSuffix(i+8)+" of {{c2::"+majorList[0]+"}} major;"+GetImage(majorList[0],[],[],majorList+majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+majorList+[majorList[0]],["8va",flatNote],[])+";;musictheory::scaledegrees\n")
+            theoryCardsBasic.write("mt-scaledegrees-b"+NumberWithSuffix(i+8)+"-"+majorList[0]+"-major-image;Scale Degrees "+majorList[0]+" major;♭"+NumberWithSuffix(i+8)+";;"+GetImage("random",[],["8va",flatNote,"8va","random"],[])+";"+flatNote+" is the ♭"+NumberWithSuffix(i+8)+" of "+majorList[0]+" major;;IT;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-b"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+flatNote+"}} is the ♭"+NumberWithSuffix(i+1)+" of {{c2::"+majorList[0]+"}} major;"+GetImage(majorList[0],[],[],majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+[majorList[0]],[flatNote],[])+";;musictheory::scaledegrees\n")
         if i==4:
-            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+sharpNote+"}} is the {{c2::♯"+NumberWithSuffix(i+1)+"}} of {{c3::"+majorList[0]+"}} major;"+GetImage(majorList[0],majorList+[majorList[0]],[sharpNote])+";;musictheory::scaledegrees\n")
-            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+flatNote+"}} is the {{c2::♭"+NumberWithSuffix(i+1)+"}} of {{c3::"+majorList[0]+"}} major;"+GetImage(majorList[0],majorList+[majorList[0]],[flatNote])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+sharpNote+"}} is the ♯"+NumberWithSuffix(i+1)+" of {{c2::"+majorList[0]+"}} major;"+GetImage(majorList[0],[],[],majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+[majorList[0]],[sharpNote],[])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+1)+"-"+majorList[0]+"-major;Scale Degrees;{{c1::"+flatNote+"}} is the ♭"+NumberWithSuffix(i+1)+" of {{c2::"+majorList[0]+"}} major;"+GetImage(majorList[0],[],[],majorList+[majorList[0]])+";"+GetImage(majorList[0],majorList+[majorList[0]],[flatNote],[])+";;musictheory::scaledegrees\n")
 
     # minor scale degree cards
-    for i in range(1,5):
+    for i in range(5):
         sharpNote = AlterNote("sharp",minorList[i])
         flatNote = AlterNote("flat",minorList[i])
-        # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-        theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+minorList[i]+"}} is the {{c2::"+NumberWithSuffix(i+1)+"}} of {{c3::"+minorList[0]+"}} minor;"+GetImage(minorList[0],minorList+[minorList[0]],[minorList[i]])+";;musictheory::scaledegrees\n")
+        theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+minorList[i]+"}} is the "+NumberWithSuffix(i+1)+" of {{c2::"+minorList[0]+"}} minor;"+GetImage(minorList[0],[],[],minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+[minorList[0]],[minorList[i]],[])+";;musictheory::scaledegrees\n")
+        theoryCardsBasic.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor-image;Scale Degrees "+minorList[0]+" minor;"+NumberWithSuffix(i+1)+";;"+GetImage("random",[],["8va",minorList[i],"8va","random"],[])+";"+minorList[i]+" is the "+NumberWithSuffix(i+1)+" of "+minorList[0]+" minor;;IT;musictheory::scaledegrees\n")
         if i==1 or i==3:
-            theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+minorList[i]+"}} is the "+NumberWithSuffix(i+8)+" of {{c3::"+minorList[0]+"}} minor;"+GetImage(minorList[0],minorList+minorList+[minorList[0]],["8va",minorList[i]])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+minorList[i]+"}} is the "+NumberWithSuffix(i+8)+" of {{c2::"+minorList[0]+"}} minor;"+GetImage(minorList[0],[],[],minorList+minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+minorList+[minorList[0]],["8va",minorList[i]],[])+";;musictheory::scaledegrees\n")
         if i==3:
-            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+sharpNote+"}} is the {{c2::♯"+NumberWithSuffix(i+8)+"}} of {{c3::"+minorList[0]+"}} minor;"+GetImage(minorList[0],minorList+minorList+[minorList[0]],["8va",sharpNote])+";;musictheory::scaledegrees\n")
-            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+sharpNote+"}} is the ♯"+NumberWithSuffix(i+1)+" of {{c3::"+minorList[0]+"}} minor;"+GetImage(minorList[0],minorList+[minorList[0]],[sharpNote])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-#"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+sharpNote+"}} is the ♯"+NumberWithSuffix(i+8)+" of {{c2::"+minorList[0]+"}} minor;"+GetImage(minorList[0],[],[],minorList+minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+minorList+[minorList[0]],["8va",sharpNote],[])+";;musictheory::scaledegrees\n")
+            theoryCardsBasic.write("mt-scaledegrees-#"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-minor-image;Scale Degrees "+minorList[0]+" minor;#"+NumberWithSuffix(i+8)+";;"+GetImage("random",[],["8va",sharpNote,"8va","random"],[])+";"+sharpNote+" is the #"+NumberWithSuffix(i+8)+" of "+minorList[0]+" minor;;IT;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+sharpNote+"}} is the ♯"+NumberWithSuffix(i+1)+" of {{c2::"+minorList[0]+"}} minor;"+GetImage(minorList[0],[],[],minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+[minorList[0]],[sharpNote],[])+";;musictheory::scaledegrees\n")
         if i==1:
-            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+flatNote+"}} is the {{c2::♭"+NumberWithSuffix(i+8)+"}} of {{c3::"+minorList[0]+"}} minor;"+GetImage(minorList[0],minorList+minorList+[minorList[0]],["8va",flatNote])+";;musictheory::scaledegrees\n")
-            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+flatNote+"}} is the ♭"+NumberWithSuffix(i+1)+" of {{c3::"+minorList[0]+"}} minor;"+GetImage(minorList[0],minorList+[minorList[0]],[flatNote])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-b"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+flatNote+"}} is the ♭"+NumberWithSuffix(i+8)+" of {{c2::"+minorList[0]+"}} minor;"+GetImage(minorList[0],[],[],minorList+minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+minorList+[minorList[0]],["8va",flatNote],[])+";;musictheory::scaledegrees\n")
+            theoryCardsBasic.write("mt-scaledegrees-b"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-minor-image;Scale Degrees "+minorList[0]+" minor;♭"+NumberWithSuffix(i+8)+";;"+GetImage("random",[],["8va",sharpNote,"8va","random"],[])+";"+sharpNote+" is the #"+NumberWithSuffix(i+8)+" of "+minorList[0]+" minor;;IT;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+flatNote+"}} is the ♭"+NumberWithSuffix(i+1)+" of {{c2::"+minorList[0]+"}} minor;"+GetImage(minorList[0],[],[],minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+[minorList[0]],[flatNote],[])+";;musictheory::scaledegrees\n")
         if i==4:
-            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+flatNote+"}} is the {{c2::♭"+NumberWithSuffix(i+1)+"}} of {{c3::"+minorList[0]+"}} minor;"+GetImage(minorList[0],minorList+[minorList[0]],[flatNote])+";;musictheory::scaledegrees\n")
-            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+sharpNote+"}} is the {{c2::♯"+NumberWithSuffix(i+1)+"}} of {{c3::"+minorList[0]+"}} minor;"+GetImage(minorList[0],minorList+[minorList[0]],[sharpNote])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+"b"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+flatNote+"}} is the ♭"+NumberWithSuffix(i+1)+" of {{c2::"+minorList[0]+"}} minor;"+GetImage(minorList[0],[],[],minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+[minorList[0]],[flatNote],[])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+"#"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-minor;Scale Degrees;{{c1::"+sharpNote+"}} is the ♯"+NumberWithSuffix(i+1)+" of {{c2::"+minorList[0]+"}} minor;"+GetImage(minorList[0],[],[],minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+[minorList[0]],[sharpNote],[])+";;musictheory::scaledegrees\n")
 
     # natural minor scale degree cards
-    for i in range(1,7):
-        # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
-        theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-natural-minor;Scale Degrees;{{c1::"+minorList[i]+"}} is the {{c2::"+NumberWithSuffix(i+1)+"}} of {{c3::"+minorList[0]+"}} natural minor;"+GetImage(minorList[0],minorList+[minorList[0]],[minorList[i]])+";;musictheory::scaledegrees\n")
+    for i in range(7):
+        theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-natural-minor;Scale Degrees;{{c1::"+minorList[i]+"}} is the "+NumberWithSuffix(i+1)+" of {{c2::"+minorList[0]+"}} natural minor;"+GetImage(minorList[0],[],[],minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+[minorList[0]],[minorList[i]],[])+";;musictheory::scaledegrees\n")
+        theoryCardsBasic.write("mt-scaledegrees-"+NumberWithSuffix(i+1)+"-"+minorList[0]+"-natural-minor-image;Scale Degrees "+minorList[0]+" natural minor;"+NumberWithSuffix(i+1)+";;"+GetImage("random",[],["8va",minorList[i],"8va","random"],[])+";"+minorList[i]+" is the "+NumberWithSuffix(i+1)+" of "+minorList[0]+" natural minor;;IT;musictheory::scaledegrees\n")
         if i==1 or i==3 or i==5:
-            theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-natural-minor;Scale Degrees;{{c1::"+minorList[i]+"}} is the "+NumberWithSuffix(i+8)+" of {{c3::"+minorList[0]+"}} natural minor;"+GetImage(minorList[0],minorList+minorList+[minorList[0]],["8va",minorList[i]])+";;musictheory::scaledegrees\n")
+            theoryCardsCloze.write("mt-scaledegrees-"+NumberWithSuffix(i+8)+"-"+minorList[0]+"-natural-minor;Scale Degrees;{{c1::"+minorList[i]+"}} is the "+NumberWithSuffix(i+8)+" of {{c2::"+minorList[0]+"}} natural minor;"+GetImage(minorList[0],[],[],minorList+minorList+[minorList[0]])+";"+GetImage(minorList[0],minorList+minorList+[minorList[0]],["8va",minorList[i]],[])+";;musictheory::scaledegrees\n")
 
     # guide tones cards
     guideToneNames = ["7","°7","-7","Δ7","-Δ7"]
     guideToneLists = [[majorList[2],AlterNote("flat",majorList[6])],[AlterNote("flat",majorList[2]),AlterNote("flat",AlterNote("flat",majorList[6]))],[AlterNote("flat",majorList[2]),AlterNote("flat",majorList[6])],[majorList[2],majorList[6]],[AlterNote("flat",majorList[2]),majorList[6]]]
     for chord in range(len(guideToneNames)):
-        # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
         if not majorList[0] == "F♯":
-            theoryCardsBasic.write("mt-guidetones-"+majorList[0]+"-"+guideToneNames[chord]+"-inversion-A;Guide Tones INVERSION A;"+majorList[0]+guideToneNames[chord]+";"+GetImage(majorList[0],guideToneLists[chord],[])+";"+guideToneLists[chord][0]+" "+guideToneLists[chord][1]+";TI;IT;musictheory::voicings\n")
-            theoryCardsBasic.write("mt-guidetones-"+majorList[0]+"-"+guideToneNames[chord]+"-inversion-B;Guide Tones INVERSION B;"+majorList[0]+guideToneNames[chord]+";"+GetImage(majorList[0],guideToneLists[chord],[])+";"+guideToneLists[chord][1]+" "+guideToneLists[chord][0]+";TI;IT;musictheory::voicings\n")
+            theoryCardsBasic.write("mt-guidetones-"+majorList[0]+"-"+guideToneNames[chord]+"-root;Guide Tones <span style=\"color:red\">ROOT</span>;"+majorList[0]+guideToneNames[chord]+";"+GetImage("random",[],[],guideToneLists[chord]+["random"])+";"+GetImage("random",guideToneLists[chord],[],guideToneLists[chord]+["random"])+";"+guideToneLists[chord][0]+" "+guideToneLists[chord][1]+";TI;IT;musictheory::voicings\n")
+            theoryCardsBasic.write("mt-guidetones-"+majorList[0]+"-"+guideToneNames[chord]+"-inverted;Guide Tones <span style=\"color:orange\">INVERTED</span>;"+majorList[0]+guideToneNames[chord]+";"+GetImage("random",[],[],guideToneLists[chord]+["random"])+";"+GetImage("random",guideToneLists[chord],[],guideToneLists[chord]+["random"])+";"+guideToneLists[chord][1]+" "+guideToneLists[chord][0]+";TI;IT;musictheory::voicings\n")
 
 
     inversions = ["ROOT POSITION","1ST INVERSION","2ND INVERSION","3RD INVERSION"]
@@ -448,6 +444,7 @@ for x in range(len(keys)):
     augmentedMajor7Notes = [melodicMinorList[2],melodicMinorList[4],melodicMinorList[6],melodicMinorList[1]]
     chordNoteLists = [majorChordNotes,minorChordNotes,diminishedChordNotes,augmentedChordNotes,dominant7Notes,diminished7Notes,minor7Notes,major7Notes,halfDiminished7Notes,minorMajor7Notes,augmented7Notes,augmentedMajor7Notes]
     chordNames = ["","-","°","+","7","°7","-7","Δ7","ø7","-Δ7","+7","+Δ7"]
+    inversionColor = ["red","orange","yellow","green"]
     for chord in range(len(chordNoteLists)):
         for inversion in range(len(chordNoteLists[chord])):
             chordList = []
@@ -456,9 +453,10 @@ for x in range(len(keys)):
                 note = (inversion+degree)%len(chordNoteLists[chord])
                 chordList += [chordNoteLists[chord][note]]
                 chordString += chordNoteLists[chord][note]+" "
-            # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
             if not majorList[0] == "F♯":
-                theoryCardsBasic.write("mt-chordnotes-"+chordNoteLists[chord][0]+"-"+chordNames[chord]+"-"+inversions[inversion]+";Chord Notes "+inversions[inversion]+";"+chordList[0]+chordNames[chord]+";"+GetImage(chordList[0],chordList,[])+";"+chordString[:-1]+";TI;IT;musictheory::voicings\n")
+                theoryCardsBasic.write("mt-chordnotes-image-"+chordNoteLists[chord][0]+"-"+chordNames[chord]+"-"+inversions[inversion]+";Chord Notes <span style=\"color:"+inversionColor[inversion]+"\">"+inversions[inversion]+"</span>;"+chordNoteLists[chord][0]+chordNames[chord]+";;"+GetImage("random",chordList,[],chordList+["random"])+";"+chordString[:-1]+";;IT;musictheory::voicings\n")
+                theoryCardsBasic.write("mt-chordnotes-ascending-"+chordNoteLists[chord][0]+"-"+chordNames[chord]+"-"+inversions[inversion]+";Chord Notes <span style=\"color:"+inversionColor[inversion]+"\">"+inversions[inversion]+"</span> <span style=\"color:hotpink\">ASCENDING</span>;"+chordNoteLists[chord][0]+chordNames[chord]+";"+GetImage("random",[],[],chordList+["random"])+";"+GetImage("random",chordList,[],chordList+["random"])+";"+chordString[:-1]+";TI;;musictheory::voicings\n")
+                theoryCardsBasic.write("mt-chordnotes-descending-"+chordNoteLists[chord][0]+"-"+chordNames[chord]+"-"+inversions[inversion]+";Chord Notes <span style=\"color:"+inversionColor[inversion]+"\">"+inversions[inversion]+"</span> <span style=\"color:indigo\">DESCENDING</span>;"+chordNoteLists[chord][0]+chordNames[chord]+";"+GetImage("random",[],[],chordList+["random"])+";"+GetImage("random",chordList,[],chordList+["random"])+";"+chordString[:-1]+";TI;;musictheory::voicings\n")
 
     # other chord voicing cards
     sus2List = [majorList[0],majorList[1],majorList[4]]
@@ -475,9 +473,10 @@ for x in range(len(keys)):
         for note in range(len(otherChordNoteLists[chord])):
             chordList += [otherChordNoteLists[chord][note]]
             chordString += otherChordNoteLists[chord][note]+" "
-        # card format [ID];[title];[front text];[front image];[back text];[back image];[back extra];[add reverse];[tags]
         if not majorList[0] == "F♯":
-            theoryCardsBasic.write("mt-chordnotes-"+otherChordNoteLists[chord][0]+"-"+otherChordNames[chord]+";Chord Notes;"+chordList[0]+otherChordNames[chord]+";"+GetImage(chordList[0],chordList,[])+";"+chordString[:-1]+";TI;IT;musictheory::voicings\n")
+            theoryCardsBasic.write("mt-chordnotes-image-"+otherChordNoteLists[chord][0]+"-"+otherChordNames[chord]+";Chord Notes;"+chordList[0]+otherChordNames[chord]+";;"+GetImage("random",chordList,[],chordList+["random"])+";"+chordString[:-1]+";;IT;musictheory::voicings\n")
+            theoryCardsBasic.write("mt-chordnotes-ascending-"+otherChordNoteLists[chord][0]+"-"+otherChordNames[chord]+";Chord Notes <span style=\"color:hotpink\">ASCENDING</span>;"+chordList[0]+otherChordNames[chord]+";"+GetImage("random",[],[],chordList+["random"])+";"+GetImage("random",chordList,[],chordList+["random"])+";"+chordString[:-1]+";TI;;musictheory::voicings\n")
+            theoryCardsBasic.write("mt-chordnotes-descending-"+otherChordNoteLists[chord][0]+"-"+otherChordNames[chord]+";Chord Notes <span style=\"color:indigo\">DESCENDING</span>;"+chordList[0]+otherChordNames[chord]+";"+GetImage("random",[],[],chordList+["random"])+";"+GetImage("random",chordList,[],chordList+["random"])+";"+chordString[:-1]+";TI;;musictheory::voicings\n")
 
     # extended chords
     # TODO add (add) and (omit) symbols when appropriate

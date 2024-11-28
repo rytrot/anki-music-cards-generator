@@ -4,249 +4,250 @@ import requests
 
 count = 0
 verbCards = open("verbCards.txt","w")
+#verbs = ["être","avoir","choir","déchoir","monter","retourner","sen-aller"]
 verbs = ["etre","avoir","aimer","saimer","jouer","saluer","etudier","briller","gagner","creer","naviguer","placer","manger","ceder","regner","leguer","rapiecer","proteger","lever","peler","appeler","interpeller","acheter","jeter","payer","essuyer","employer","envoyer","finir","hair","aller","courir","mourir","dormir","servir","sentir","vetir","fuir","tenir","acquerir","bouillir","couvrir","cueillir","defaillir","faillir","ouir","gesir","recevoir","voir","prevoir","pourvoir","savoir","devoir","pouvoir","valoir","prevaloir","vouloir","emouvoir","asseoir","pleuvoir","falloir","seoir","surseoir","choir","echoir","dechoir","faire","extraire","taire","plaire","croire","boire","conduire","rire","dire","interdire","maudire","lire","ecrire","suffire","confire","rendre","prendre","repandre","peindre","craindre","joindre","coudre","moudre","resoudre","rompre","battre","mettre","vaincre","connaitre","naitre","repaitre","croitre","accroitre","conclure","suivre","vivre","clore","monter","arriver","entrer","retourner","tomber","rester","sendormir","sasseoir","se-lever","se-reveiller","sen-aller","senfuir"]
+
 for verb in verbs:
+    # get the web data
     htmlText = requests.get("https://conjugaison.bescherelle.com/verbes/"+verb).text
     soup = BeautifulSoup(htmlText, "lxml")
-    infinitif = soup.find("span",class_="field").text
+    infinitif = soup.find("span",class_="field").text.replace("’","'")
     print(infinitif)
 
-    voices = soup.find_all("div",class_="container-verbe")
-    for v in range(len(voices)):
-        if len(voices) > 1:
-            if v == 0:
-                voix = "Voix active"
-            elif v == 1:
-                voix = "Voix passive"
-        else:
-            voix = "Voix ?"
+    # for each voix
+    if soup.find("ul",class_="active-passive") == None:
+        voixNames = [soup.find("div",class_="no-passive")]
+    else:
+        voixNames = [soup.find("a",class_="active-set"),soup.find("a",class_="passive-set")]
+    voixDivs = soup.find_all("div",class_="container-verbe")
+    for v in range(len(voixNames)):
+        voixName = voixNames[v].text
+        voixDiv = voixDivs[v]
 
-        tempss = voices[v].find_all("div",class_="tab-pane")
-        for t in range(len(tempss)):
-            if len(voices) > 1:
-                if t == 0:
-                    temps = "Temps simples"
-                elif t == 1:
-                    temps = "Temps composés"
-            else:
-                temps = "Temps ?"
+        # for each temps
+        tempsNames = [soup.find("a",attrs={"aria-controls":"simple-"+voixName.split(" ")[1]}),soup.find("a",attrs={"aria-controls":"composes-"+voixName.split(" ")[1]})]
+        tempsDivs = voixDiv.find_all("div",class_="tab-pane")
+        for t in range(len(tempsNames)):
+            tempsName = tempsNames[t].text
+            tempsDiv = tempsDivs[t]
 
-            cardsTypes = tempss[t].find_all("div",class_="card-type")
-            for cardType in cardsTypes:
-                title = cardType.find("h4").text
-                title = title[0]+title[1:].lower()
-                cardVerbes = cardType.find_all("div",class_="card-verbe")
-                for cardVerbe in cardVerbes:
-                    title1 = cardVerbe.find("h5").text
-                    ps = cardVerbe.find_all("p")
-                    imperatifCount = 0
-                    numVerbes = 0
-                    for p in ps:
-                        if not p.text == "":
-                            numVerbes += 1
-                    for p in ps:
-                        prenom = ""
-                        prenomMasculin = ""
-                        prenomFeminin = ""
-                        prenomMasculinSingulier = ""
-                        prenomFemininSingulier = ""
-                        prenomMasculinPluriel = ""
-                        prenomFemininPluriel = ""
-                        prenomReflexive = ""
-                        auxiliaire = ""
-                        auxiliaire1 = ""
-                        verbeRaw = ""
-                        auxiliairesOu = [""]
+            # for each card (half of the page)
+            cards = tempsDiv.find_all("div",class_="card-type")
+            for card in cards:
+                title1 = card.find("h4",class_="card-title").text
+                title1 = title1[0]+title1[1:].lower()
 
-                        if not p.find_all("auxiliary") == None:
-                            auxiliaires = p.find_all("auxiliary")
-                            if len(auxiliaires) > 0:
-                                auxiliaire = auxiliaires[0].text.strip()+" "
-                            if len(auxiliaires) > 1:
-                                auxiliaire1 = auxiliaires[1].text.strip()+" "
+                # for each subCard (subTitle eg. present)
+                subCards = card.find_all("div",class_="card-verbe")
+                for subCard in subCards:
+                    title2 = subCard.find("h5",class_="card-title").text
+                    conjugationsContent = subCard.find("div",class_="content-verbe")
 
-                        if not p.find("reflexive-pronoun") == None:
-                            prenomReflexive = p.find("reflexive-pronoun").text.strip()
-                            if prenomReflexive=="nous" or prenomReflexive=="vous" or prenomReflexive=="me" or prenomReflexive=="te" or prenomReflexive=="se":
-                                prenomReflexive += " "
+                    # for each conjugation (e.g. je suis)
+                    conjugations = subCard.find_all("p")
+                    for c in range(len(conjugations)):
+                        conjugation = conjugations[c]
+                        # if the conjugation has no content it is invalid
+                        validContents = False
+                        for content in conjugation.contents:
+                            if type(content) == bs4.element.Tag:
+                                validContents = True
 
-                        if not p.find("verb")==None:
-                            verbeRaw = p.find("verb").text.strip()
-                            if title=="Impératif":
-                                imperatifCount += 1
+                        if validContents==True:
+                        # get the pronoun
+                            if conjugation.find("personal-pronoun") == None:
+                                if title1 == "Impératif":
+                                    if c == 0:
+                                        prenomRaw = "(tu)"
+                                    elif c == 1:
+                                        prenomRaw = "(nous)"
+                                    elif c == 2:
+                                        prenomRaw = "(vous)"
+                                else:
+                                    prenomRaw = ""
+                            else:
+                                prenomRaw = conjugation.find("personal-pronoun").text.replace("’","'").strip()
+                            if conjugation.find("reflexive-pronoun") == None:
+                                prenomReflexive = ""
+                            else:
+                                prenomReflexive = conjugation.find("reflexive-pronoun").text.strip()
+
+                            # get the raw verb
+                            verbeRaw = conjugation.find("verb").text.strip()
+
+                            # get auxiliaire or split them into two if they have an " ou " and are in the verb
                             if " ou " in verbeRaw:
-                                auxiliairesOu = verbeRaw.split(" ou ")
-                                auxiliairesOu[0] = auxiliairesOu[0].strip()+" "
-                                split = auxiliairesOu[1].split()
-                                auxiliairesOu[1] = split[0].strip()+" "
-                                verbeRaw = split[1].strip()
-                            if " / " in verbeRaw:
+                                auxiliaires = [verbeRaw.split(" ")[0],verbeRaw.split(" ")[2]]
+                            elif conjugation.find("auxiliary") == None:
+                                auxiliaires = [""]
+                            else:
+                                auxiliaires = [conjugation.find("auxiliary").text]
+                            if len(conjugation.find_all("auxiliary")) == 2:
+                                auxiliaire1 = conjugation.find_all("auxiliary")[1].text.strip()
+                            else:
+                                auxiliaire1 = ""
+
+                            # get the verb or split them into two if they have a " / "
+                            if "/" in verbeRaw:
                                 verbes = verbeRaw.split(" / ")
+                            elif " ou " in verbeRaw:
+                                verbes = [verbeRaw.split(" ")[3]]
                             else:
                                 verbes = [verbeRaw]
 
-                            for v in range(len(verbes)):
-                                verbe = verbes[v]
-                                infinitif = soup.find("span",class_="field").text
-                                if len(verbes) == 2:
-                                    if v == 0:
-                                        infinitif += (" (type 1)")
-                                    if v == 1:
-                                        infinitif += (" (type 2)")
-                                for a in range(len(auxiliairesOu)):
-                                    if not p.find("personal-pronoun") == None:
-                                        prenom = p.find("personal-pronoun").text.strip()
-                                    #print("\n",voix,temps,title,title1,prenom,prenomReflexive,auxiliaire,verbe)
-                                    if title=="Impératif":
-                                        if numVerbes == 3:
-                                            if imperatifCount == 1:
-                                                prenom = "(tu)"
-                                            if imperatifCount == 2:
-                                                prenom = "(nous)"
-                                            if imperatifCount == 3:
-                                                prenom = "(vous)"
-                                        elif numVerbes == 2:
-                                            if imperatifCount == 1:
-                                                prenom = "(nous)"
-                                            if imperatifCount == 2:
-                                                prenom = "(vous)"
-
-                                    if len(auxiliairesOu) == 2:
-                                        auxiliaire = auxiliairesOu[a]
-                                        if a == 0:
-                                            if "(e)(s)" in verbe:
-                                                terminaison = "(e)(s)"
-                                                verbe = verbe.replace("(e)(s)","")
-                                            elif "(e)s" in verbe:
-                                                terminaison = "(e)s"
-                                                verbe = verbe.replace("(e)s","")
-                                            elif "(e)" in verbe:
-                                                terminaison = "(e)"
-                                                verbe = verbe.replace("(e)","")
-                                        elif a == 1:
-                                            verbe += terminaison
-
-                                    if "qu’il (elle)" in prenom:
-                                        prenom = "qu'il/qu'elle/qu'on"
-                                    elif "qu’ils (elles)" in prenom:
-                                        prenom = "qu'ils/qu'elles"
-                                    elif "il (elle)" in prenom:
-                                        prenom = "il/elle/on"
-                                    elif "ils (elles)" in prenom:
-                                        prenom = "ils/elles"
-
-                                    if "(e)s" in verbe:
-                                        verbeMasculin = verbe.replace("(e)s","s")
-                                        verbeFeminin = verbe.replace("(e)s","es")
-                                        if "nous" in prenom or "vous" in prenom:
-                                            prenomMasculin = "(m) "+prenom
-                                            prenomFeminin = "(f) "+prenom
-                                        elif "ils/elles" in prenom:
-                                            prenomMasculin = "ils"
-                                            prenomFeminin = "elles"
-                                        elif "qu'ils/qu'elles" in prenom:
-                                            prenomMasculin = "qu'ils"
-                                            prenomFeminin = "qu'elles"
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculin+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFeminin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFeminin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFeminin+";conjugaison::"+infinitif+"\n")
-                                    elif "(es)" in verbe:
-                                        verbeMasculin = verbe.replace("(es)","")
-                                        verbeFeminin = verbe.replace("(es)","es")
-                                        if "ils" in prenom or "elles" in prenom:
-                                            prenomMasculin = "ils"
-                                            prenomFeminin = "elles"
-                                        elif "qu'ils" in prenom or "qu'elles" in prenom:
-                                            prenomMasculin = "qu'ils"
-                                            prenomFeminin = "qu'elles"
-                                        else:
-                                            prenomMasculin = "(m) "+prenom
-                                            prenomFeminin = "(f) "+prenom
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculin+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFeminin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFeminin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFeminin+";conjugaison::"+infinitif+"\n")
-                                    elif "(e)" in verbe and not "(s)" in verbe:
-                                        verbeMasculin = verbe.replace("(e)","")
-                                        verbeFeminin = verbe.replace("(e)","e")
-                                        if "il/elle/on" in prenom:
-                                            prenomMasculin = "il"
-                                            prenomFeminin = "elle"
-                                            prenomOnMasculin = "(m) on"
-                                            prenomOnFeminin = "(f) on"
-                                            verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomOnMasculin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomOnMasculin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculin+";conjugaison::"+infinitif+"\n")
-                                            verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomOnFeminin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomOnFeminin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFeminin+";conjugaison::"+infinitif+"\n")
-                                        elif "qu'il/qu'elle/qu'on" in prenom:
-                                            prenomMasculin = "qu'il"
-                                            prenomFeminin = "qu'elle"
-                                            prenomOnMasculin = "(m) qu'on"
-                                            prenomOnFeminin = "(f) qu'on"
-                                            verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomOnMasculin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomOnMasculin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculin+";conjugaison::"+infinitif+"\n")
-                                            verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomOnFeminin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomOnFeminin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFeminin+";conjugaison::"+infinitif+"\n")
-                                        else:
-                                            prenomMasculin = "(m) "+prenom
-                                            prenomFeminin = "(f) "+prenom
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculin+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFeminin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFeminin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFeminin+";conjugaison::"+infinitif+"\n")
-                                    elif "(e)(s)" in verbe:
-                                        prenomMasculinSingulier = " (ms)"
-                                        prenomFemininSingulier = " (fs)"
-                                        prenomMasculinPluriel = " (mp)"
-                                        prenomFemininPluriel = " (fp)"
-                                        verbeMasculinSingulier = verbe.replace("(e)(s)","")
-                                        verbeFemininSingulier = verbe.replace("(e)(s)","e")
-                                        verbeMasculinPluriel = verbe.replace("(e)(s)","s")
-                                        verbeFemininPluriel = verbe.replace("(e)(s)","es")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculinSingulier+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculinSingulier+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculinSingulier+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFemininSingulier+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFemininSingulier+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFemininSingulier+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculinPluriel+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculinPluriel+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculinPluriel+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFemininPluriel+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFemininPluriel+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFemininPluriel+";conjugaison::"+infinitif+"\n")
-                                    elif "(s, se, s, ses)" in verbe:
-                                        prenomMasculinSingulier = " (ms)"
-                                        prenomFemininSingulier = " (fs)"
-                                        prenomMasculinPluriel = " (mp)"
-                                        prenomFemininPluriel = " (fp)"
-                                        verbeMasculinSingulier = verbe.replace(" (s, se, s, ses)","")
-                                        verbeFemininSingulier = verbe.replace(" (s, se, s, ses)","e")
-                                        verbeMasculinPluriel = verbe.replace(" (s, se, s, ses)","")
-                                        verbeFemininPluriel = verbe.replace(" (s, se, s, ses)","es")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculinSingulier+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculinSingulier+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculinSingulier+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFemininSingulier+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFemininSingulier+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFemininSingulier+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculinPluriel+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculinPluriel+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculinPluriel+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFemininPluriel+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFemininPluriel+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFemininPluriel+";conjugaison::"+infinitif+"\n")
-                                    elif "(û, ue)" in verbe:
-                                        verbeMasculin = verbe.replace(" (û, ue)","")
-                                        verbeFeminin = verbe.replace("û (û, ue)","ue")
-                                        if "il/elle/on" in prenom:
-                                            prenomMasculin = "il"
-                                            prenomFeminin = "elle"
-                                            prenomOnMasculin = "(m) on"
-                                            prenomOnFeminin = "(f) on"
-                                            verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomOnMasculin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomOnMasculin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculin+";conjugaison::"+infinitif+"\n")
-                                            verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomOnFeminin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomOnFeminin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFeminin+";conjugaison::"+infinitif+"\n")
-                                        elif "qu'il/qu'elle/qu'on" in prenom:
-                                            prenomMasculin = "qu'il"
-                                            prenomFeminin = "qu'elle"
-                                            prenomOnMasculin = "(m) on"
-                                            prenomOnFeminin = "(f) on"
-                                            verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomOnMasculin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomOnMasculin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculin+";conjugaison::"+infinitif+"\n")
-                                            verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomOnFeminin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomOnFeminin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFeminin+";conjugaison::"+infinitif+"\n")
-                                        else:
-                                            prenomMasculin = "(m) "+prenom
-                                            prenomFeminin = "(f) "+prenom
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculin+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFeminin+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFeminin+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFeminin+";conjugaison::"+infinitif+"\n")
-                                    elif "(û, ue, us, ues)" in verbe:
-                                        prenomMasculinSingulier = "(ms) "+prenom
-                                        prenomFemininSingulier = "(fs) "+prenom
-                                        prenomMasculinPluriel = "(mp) "+prenom
-                                        prenomFemininPluriel = "(fp) "+prenom
-                                        verbeMasculinSingulier = verbe.replace("û (û, ue, us, ues)","û")
-                                        verbeFemininSingulier = verbe.replace("û (û, ue, us, ues)","us")
-                                        verbeMasculinPluriel = verbe.replace("û (û, ue, us, ues)","ue")
-                                        verbeFemininPluriel = verbe.replace("û (û, ue, us, ues)","ues")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculinSingulier+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculinSingulier+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculinSingulier+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFemininSingulier+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFemininSingulier+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFemininSingulier+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomMasculinPluriel+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomMasculinPluriel+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeMasculinPluriel+";conjugaison::"+infinitif+"\n")
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenomFemininPluriel+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenomFemininPluriel+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbeFemininPluriel+";conjugaison::"+infinitif+"\n")
+                            # for each auxiliaire and verb
+                            for a in range(len(auxiliaires)):
+                                auxiliaire = auxiliaires[a].strip()
+                                for v in range(len(verbes)):
+                                    verbeRare = verbes[v].strip()
+                                    # if there is more than 1 verb, assign it as (type 1) or (type 2)
+                                    if len(verbes) > 1:
+                                        verbeType = " (type "+str(v+1)+")"
                                     else:
-                                        verbCards.write(voix+"|"+title+"|"+title1+"|"+prenom+"|"+infinitif+";"+voix+";"+temps +";"+title+";"+title1+";"+prenom+";"+infinitif+";"+prenomReflexive+auxiliaire+auxiliaire1+verbe+";conjugaison::"+infinitif+"\n")
-        
-            
+                                        verbeType = ""
+
+                                    # if the auxiliaire is split by an " ou " the first one is avoir and the second one is être so remove any (e) or (s) from the verb on the first one
+                                    if " ou " in verbeRaw:
+                                        if a == 0:
+                                            verbeRare = verbeRare.replace("(e)","")
+                                            verbeRare = verbeRare.replace("(s)","")
+                                            verbe = verbeRare
+                                            ouAuxiliaire = " (avoir)"
+                                        elif a==1:
+                                            ouAuxiliaire = " (être)"
+                                    else:
+                                        ouAuxiliaire = ""
+
+
+                                    # process the prenoms
+                                    if prenomRaw == "il (elle)":
+                                        if not ("(e)" in verbeRare or "(û, ue)" in verbeRare):
+                                            qPrenoms = ["il","elle","on"]
+                                            aPrenoms = ["il","elle","on"]
+                                        else:
+                                            qPrenoms = ["il","elle","(m) on","(f) on"]
+                                            aPrenoms = ["il","elle","on","on"]
+                                    elif prenomRaw == "qu'il (elle)":
+                                        if not ("(e)" in verbeRare or "(û, ue)" in verbeRare):
+                                            qPrenoms = ["qu'il","qu'elle","qu'on"]
+                                            aPrenoms = ["qu'il","qu'elle","qu'on"]
+                                        elif "(e)" in verbeRare:
+                                                qPrenoms = ["qu'il","qu'elle","(m) qu'on","(f) qu'on"]
+                                                aPrenoms = ["qu'il","qu'elle","qu'on","qu'on"]
+                                    elif prenomRaw == "ils (elles)":
+                                        qPrenoms = ["ils","elles"]
+                                        aPrenoms = ["ils","elles"]
+                                    elif prenomRaw == "qu'ils (elles)":
+                                        qPrenoms = ["qu'ils","qu'elles"]
+                                        aPrenoms = ["qu'ils","qu'elles"]
+                                    elif prenomRaw=="(tu)" or prenomRaw=="(vous)" or prenomRaw=="(nous)":
+                                        if "(e)" in verbeRare:
+                                            qPrenoms = ["(m) "+prenomRaw,"(f) "+prenomRaw]
+                                            aPrenoms = ["",""]
+                                        else:
+                                            qPrenoms = [prenomRaw]
+                                            aPrenoms = [""]
+                                    elif "j'" in prenomRaw or "je" in prenomRaw or "tu" in prenomRaw or "nous" in prenomRaw or "vous" in prenomRaw:
+                                        if "(e)" in verbeRare or "(es)" in verbeRare or "(û, ue)" in verbeRare:
+                                            qPrenoms = ["(m) "+prenomRaw,"(f) "+prenomRaw]
+                                            aPrenoms = [prenomRaw,prenomRaw]
+                                        else:
+                                            qPrenoms = [prenomRaw]
+                                            aPrenoms = [prenomRaw]
+                                    elif prenomRaw == "":
+                                        if "(e)" in verbeRare or "(es)" in verbeRare or "(s, se, s, ses)" in verbeRare or "(û, ue, us, ues)" in verbeRare:
+                                            if "(s)" in verbeRare or "(s, se, s, ses)" in verbeRare or "(û, ue, us, ues)" in verbeRare:
+                                                qPrenoms = ["(ms)","(mp)","(fs)","(fp)"]
+                                                aPrenoms = ["","","",""]
+                                            else:
+                                                qPrenoms = ["(m)","(f)"]
+                                                aPrenoms = ["",""]
+                                        else:
+                                            qPrenoms = [""]
+                                            aPrenoms = [""]
+
+                                    for p in range(len(qPrenoms)):
+                                        qPrenom = qPrenoms[p]
+                                        aPrenom = aPrenoms[p]
+
+                                        if "j'" in qPrenom and (auxiliaire=="suis" or auxiliaire=="fus" or auxiliaire=="serai" or auxiliaire=="serais" or auxiliaire=="sois" or auxiliaire=="fusse"):
+                                            qPrenom = qPrenom.replace("j'","je")
+                                            aPrenom = aPrenom.replace("j'","je")
+
+                                        masculin = False
+                                        feminin = False
+                                        pluriel = False
+                                        singulier = False
+                                        if "il" in qPrenom or "(m)" in qPrenom or "(ms)" in qPrenom or "(mp)" in qPrenom:
+                                            masculin = True
+                                        elif "elle" in qPrenom or "(f)" in qPrenom or "(fs)" in qPrenom or "(fp)" in qPrenom:
+                                            feminin = True
+                                        if "ils" in qPrenom or "elles" in qPrenom or "nous" in qPrenom or "vous" in qPrenom or "(mp)" in qPrenom or "(fp)" in qPrenom:
+                                            pluriel = True
+                                        elif not ("ils" in qPrenom or "elles" in qPrenom or "nous" in qPrenom or "vous" in qPrenom) or "(ms)" in qPrenom or "(fs)" in qPrenom:
+                                            singulier = True
+
+                                        if "(e)(s)" in verbeRare:
+                                            if masculin and singulier:
+                                                verbe = verbeRare.replace("(e)(s)","")
+                                            elif masculin and pluriel:
+                                                verbe = verbeRare.replace("(e)(s)","s")
+                                            elif feminin and singulier:
+                                                verbe = verbeRare.replace("(e)(s)","e")
+                                            elif feminin and pluriel:
+                                                verbe = verbeRare.replace("(e)(s)","es")
+                                        elif "(e)" in verbeRare and not "(s)" in verbeRare:
+                                            if masculin:
+                                                verbe = verbeRare.replace("(e)","")
+                                            elif feminin:
+                                                verbe = verbeRare.replace("(e)","e")
+                                        elif "(es)" in verbeRare:
+                                            if masculin:
+                                                verbe = verbeRare.replace("(es)","")
+                                            if feminin:
+                                                    verbe = verbeRare.replace("(es)","es")
+                                        elif "(s, se, s, ses)" in verbeRare:
+                                            if masculin:
+                                                verbe = verbeRare.replace("s (s, se, s, ses)","s")
+                                            elif feminin and singulier:
+                                                verbe = verbeRare.replace("s (s, se, s, ses)","se")
+                                            elif feminin and pluriel:
+                                                verbe = verbeRare.replace("s (s, se, s, ses)","ses")
+                                        elif "(û, ue)" in verbeRare:
+                                            if masculin:
+                                                verbe = verbeRare.replace("û (û, ue)","û")
+                                            elif feminin:
+                                                verbe = verbeRare.replace("û (û, ue)","ue")
+                                        elif "(û, ue, us, ues)" in verbeRare:
+                                            if masculin and singulier:
+                                                verbe = verbeRare.replace("û (û, ue, us, ues)","û")
+                                            elif masculin and pluriel:
+                                                verbe = verbeRare.replace("û (û, ue, us, ues)","us")
+                                            elif feminin and singulier:
+                                                verbe = verbeRare.replace("û (û, ue, us, ues)","ue")
+                                            elif feminin and pluriel:
+                                                verbe = verbeRare.replace("û (û, ue, us, ues)","ues")
+                                        else:
+                                            verbe = verbeRare
+
+                                        if not (aPrenom=="" or "j'" in aPrenom):
+                                            aPrenomSpace = aPrenom+" "
+                                        else:
+                                            aPrenomSpace = aPrenom
+
+                                        if not (auxiliaire=="" or auxiliaire[len(auxiliaire)-1]==" "):
+                                            auxiliaireSpace = auxiliaire+" "
+                                        else:
+                                            auxiliaireSpace = auxiliaire
+
+                                        if not (auxiliaire1=="" or auxiliaire1[len(auxiliaire1)-1]==" "):
+                                            auxiliaire1Space = auxiliaire1+" "
+                                        else:
+                                            auxiliaire1Space = auxiliaire1
+
+                                        if prenomReflexive=="nous" or prenomReflexive=="vous" or prenomReflexive=="me" or prenomReflexive=="te" or prenomReflexive=="se":
+                                            prenomReflexiveSpace = prenomReflexive+" "
+                                        else:
+                                            prenomReflexiveSpace = prenomReflexive
+
+                                        verbCards.write(voixName+"|"+tempsName+"|"+title1+"|"+title2+"|"+qPrenom+"|"+auxiliaire+"|"+infinitif+verbeType+";"+voixName+";"+tempsName+";"+title1+";"+title2+";"+qPrenom+ouAuxiliaire+" ("+infinitif+verbeType+");"+aPrenomSpace+prenomReflexiveSpace+auxiliaireSpace+auxiliaire1Space+verbe+";conjugaison::"+infinitif.replace(" ","")+"\n")

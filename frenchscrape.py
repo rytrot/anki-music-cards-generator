@@ -70,10 +70,10 @@ for verb in verbs:
                             if conjugation.find("reflexive-pronoun") == None:
                                 prenomReflexive = ""
                             else:
-                                prenomReflexive = conjugation.find("reflexive-pronoun").text.strip()
+                                prenomReflexive = conjugation.find("reflexive-pronoun").text.replace("’","'").strip()
 
                             # get the raw verb
-                            verbeRaw = conjugation.find("verb").text.strip()
+                            verbeRaw = conjugation.find("verb").text.replace("’","'").strip()
 
                             # get auxiliaire or split them into two if they have an " ou " and are in the verb
                             if " ou " in verbeRaw:
@@ -245,7 +245,7 @@ for verb in verbs:
                                         else:
                                             auxiliaire1Space = auxiliaire1
 
-                                        if prenomReflexive=="nous" or prenomReflexive=="vous" or prenomReflexive=="me" or prenomReflexive=="te" or prenomReflexive=="se":
+                                        if prenomReflexive=="nous" or prenomReflexive=="vous" or prenomReflexive=="me" or prenomReflexive=="te" or prenomReflexive=="se" or prenomReflexive=="soyons" or prenomReflexive=="soyez":
                                             prenomReflexiveSpace = prenomReflexive+" "
                                         else:
                                             prenomReflexiveSpace = prenomReflexive
